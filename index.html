@@ -6,7 +6,10 @@
 <meta name="theme-color" content="#070b12">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="description" content="Gamblesaur — Live moneyline & spread velocity tracker. Detect momentum before the market catches up.">
+<meta name="description" content="Gamblesaur — Live moneyline & spread velocity tracker. Real scores, real momentum.">
+<meta property="og:title" content="Gamblesaur 🦖">
+<meta property="og:description" content="Live moneyline & spread velocity tracker — detect momentum before the market catches up">
+<meta name="twitter:card" content="summary">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦖</text></svg>">
 <title>Gamblesaur</title>
@@ -17,54 +20,44 @@
   --bg:#070b12;--card:#0d1117;--surface:#111827;--border:#1a2030;
   --text:#e2e8f0;--muted:#94a3b8;--dim:#475569;--faint:#334155;
   --green:#4ade80;--green-d:#16a34a;--red:#f87171;--red-d:#dc2626;
-  --blue:#60a5fa;--orange:#fb923c;--amber:#fbbf24;
+  --blue:#60a5fa;--orange:#fb923c;--amber:#fbbf24;--purple:#c084fc;
   --font:'DM Sans',sans-serif;--mono:'Azeret Mono',monospace;--display:'Syne',sans-serif;
 }
-html,body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden;min-height:100vh;min-height:100dvh}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden;min-height:100dvh}
 ::-webkit-scrollbar{width:0;display:none}
-
-.app{max-width:480px;margin:0 auto;padding:env(safe-area-inset-top,16px) 14px calc(env(safe-area-inset-bottom,16px) + 60px)}
-
-/* Header */
+.app{max-width:480px;margin:0 auto;padding:env(safe-area-inset-top,16px) 14px calc(env(safe-area-inset-bottom,16px) + 64px)}
 .hdr{display:flex;align-items:center;gap:8px;padding:16px 0 4px}
 .hdr-live{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px #4ade8066;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .hdr h1{font-family:var(--display);font-size:22px;font-weight:800;color:#f0fdf4;letter-spacing:-.02em}
 .hdr-right{margin-left:auto;text-align:right}
 .hdr-right span{font-size:10px;color:var(--green);font-weight:600;letter-spacing:.08em}
 .hdr-sub{font-size:11px;color:var(--dim);padding:0 0 14px 30px}
-
-/* Pills */
 .pills{display:flex;gap:5px;padding:0 0 12px;overflow-x:auto;scrollbar-width:none}
 .pill{padding:6px 14px;border-radius:20px;border:none;background:var(--surface);color:var(--dim);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font);transition:all .2s}
 .pill.on{background:linear-gradient(135deg,#0f5132,#14532d);color:var(--green);box-shadow:0 0 12px #22c55e15}
-
-/* Sort */
 .sort-row{display:flex;align-items:center;gap:4px;padding:0 0 12px}
 .sort-label{font-size:9px;color:var(--faint);font-weight:600;letter-spacing:.06em;margin-right:4px}
 .sort-btn{padding:3px 8px;border-radius:4px;border:none;background:transparent;color:var(--faint);font-size:10px;font-weight:600;cursor:pointer;text-transform:uppercase;font-family:var(--font)}
 .sort-btn.on{background:var(--surface);color:var(--muted)}
-
-/* Best plays */
-.best{border:1px solid #22c55e20;border-radius:12px;padding:12px 14px;margin-bottom:14px;background:linear-gradient(135deg,#071a0e,#0a1210)}
+.best{border:1px solid #22c55e20;border-radius:12px;padding:12px 14px;margin-bottom:14px;background:linear-gradient(135deg,#071a0e,#0a1210);animation:fadeIn .4s ease}
 .best-label{font-size:9px;font-weight:800;color:var(--green);letter-spacing:.14em;margin-bottom:8px;display:flex;align-items:center;gap:5px}
 .best-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #22c55e10}
 .best-row:last-child{border:none}
 .best-team{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
 .best-odds{font-family:var(--mono);font-size:13px;font-weight:700}
 .best-edge{font-size:10px;color:var(--green);font-family:var(--mono);font-weight:600;margin-left:6px}
-
-/* Badge */
 .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:.06em}
 .badge-sb{background:#052e16;color:var(--green);border:1px solid var(--green-d)}
 .badge-buy{background:#0a2618;color:#86efac;border:1px solid #22c55e55}
 .badge-hold{background:var(--surface);color:var(--dim);border:1px solid var(--faint)}
 .badge-fade{background:#2a0f15;color:#fca5a5;border:1px solid #ef444455}
 .badge-sf{background:#350a0a;color:var(--red);border:1px solid var(--red-d)}
-
-/* Card */
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;cursor:pointer;transition:border-color .3s,box-shadow .3s}
-.card:active{transform:scale(.995)}
+.badge-sched{background:#1e1b4b;color:#a5b4fc;border:1px solid #6366f155}
+.badge-final{background:#1a1a2e;color:#94a3b8;border:1px solid #475569}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;cursor:pointer;transition:border-color .3s,box-shadow .3s;animation:fadeIn .3s ease}
+.card:active{transform:scale(.997)}
 .card-accent{height:2px}
 .card-body{padding:12px 14px}
 .card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
@@ -75,337 +68,625 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font);overflo
 .card-at{color:var(--faint);margin:0 5px;font-size:11px;font-weight:500}
 .card-series{font-size:10px;color:var(--dim);margin-top:2px}
 .card-score{font-family:var(--mono);font-size:22px;font-weight:800;color:#cbd5e1}
-
-/* Odds grid */
+.card-sched-score{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--dim)}
 .odds-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 .odds-box{background:#080c14;border-radius:8px;padding:8px 10px;border:1px solid var(--surface);transition:border-color .3s}
 .odds-box.signal{border-color:#22c55e25}
 .odds-team{font-size:10px;font-weight:600;color:var(--muted)}
 .odds-num{font-family:var(--mono);font-size:17px;font-weight:800;margin:2px 0;transition:color .3s}
 .odds-impl{font-size:9px;color:var(--faint);font-family:var(--mono);margin-top:3px}
-
-/* Velocity bar */
 .vel{display:flex;align-items:center;gap:5px;margin-top:4px}
 .vel-dir{font-size:10px;font-weight:800;width:10px;text-align:center}
 .vel-track{flex:1;height:3px;background:var(--surface);border-radius:2px;overflow:hidden}
 .vel-fill{height:100%;border-radius:2px;transition:width .6s cubic-bezier(.4,0,.2,1)}
 .vel-num{font-family:var(--mono);font-size:10px;min-width:40px;text-align:right;font-weight:600}
-
-/* Sparkline */
 .spark{display:block;overflow:visible}
-
-/* Spread */
 .spread-box{background:#0d1117;border-radius:8px;padding:8px 10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 .spread-label{font-size:9px;font-weight:700;color:var(--dim);letter-spacing:.1em}
 .spread-val{display:flex;align-items:baseline;gap:6px}
 .spread-num{font-family:var(--mono);font-size:20px;font-weight:800}
 .spread-vel{font-family:var(--mono);font-size:10px;font-weight:600}
-
-/* Volume */
 .vol-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);font-weight:500;margin-bottom:2px}
 .vol-track{display:flex;height:4px;border-radius:2px;overflow:hidden;gap:1px}
 .vol-a{background:var(--orange);transition:width .5s}
 .vol-h{background:var(--blue);flex:1}
-
-/* Expanded detail */
 .detail{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--surface);border:1px solid var(--border)}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;text-align:center}
 .detail-label{font-size:8px;color:var(--dim);font-weight:700;letter-spacing:.1em}
 .detail-val{font-family:var(--mono);font-size:14px;font-weight:800}
 .detail-text{font-size:11px;color:var(--muted);line-height:1.6}
 .detail-strong{font-weight:700}
-
-/* Player stats */
-.players{font-size:10px;color:var(--dim);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
-
-/* How it works */
-.how{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:20px}
+.footer{text-align:center;padding:16px 0;font-size:9px;color:var(--faint)}
+.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(7,11,18,.92);border-top:1px solid var(--border);display:flex;justify-content:center;gap:24px;padding:8px 0 calc(env(safe-area-inset-bottom,8px) + 4px);z-index:100;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--dim);font-size:9px;font-weight:600;cursor:pointer;padding:4px 12px;font-family:var(--font)}
+.nav-btn.on{color:var(--green)}
+.nav-icon{font-size:18px}
+.loading{text-align:center;padding:60px 0;color:var(--dim)}
+.loading-spin{display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:var(--card);border:1px solid var(--red-d);border-radius:12px;padding:20px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6}
+.refresh-btn{margin-top:12px;padding:8px 20px;border-radius:8px;border:none;background:var(--green-d);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)}
+.how{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:10px}
+.how:first-of-type{margin-top:0}
 .how-title{font-size:9px;font-weight:800;color:var(--faint);letter-spacing:.12em;margin-bottom:10px}
 .how-text{font-size:11px;color:var(--dim);line-height:1.7}
 .how-text p{margin-bottom:6px}
 .how-text strong{color:var(--muted)}
-
-.footer{text-align:center;padding:16px 0;font-size:9px;color:var(--faint)}
-
-/* Bottom nav */
-.nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:center;gap:24px;padding:8px 0 calc(env(safe-area-inset-bottom,8px) + 4px);z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.nav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--dim);font-size:9px;font-weight:600;cursor:pointer;padding:4px 12px;font-family:var(--font)}
-.nav-btn.on{color:var(--green)}
-.nav-icon{font-size:18px}
-
-/* Install prompt */
-.install-banner{background:linear-gradient(135deg,#0f5132,#14532d);border:1px solid #22c55e33;border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
-.install-banner p{font-size:12px;color:var(--green);flex:1;line-height:1.4}
-.install-btn{padding:6px 14px;border-radius:8px;border:none;background:#22c55e;color:#052e16;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)}
-.install-close{background:none;border:none;color:var(--green);font-size:18px;cursor:pointer;padding:4px}
-
+.last-update{font-size:9px;color:var(--faint);padding:0 0 10px;display:flex;align-items:center;gap:5px}
+.empty{text-align:center;padding:50px 0;color:var(--dim)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.empty h3{font-size:16px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.empty p{font-size:12px}
 @media(min-width:520px){.app{padding-top:24px}}
 </style>
 </head>
 <body>
-<div class="app" id="app"></div>
-
+<div class="app" id="app">
+  <div class="loading"><div class="loading-spin"></div><div>Loading live games...</div></div>
+</div>
 <nav class="nav">
-  <button class="nav-btn on" onclick="setView('live')"><span class="nav-icon">📊</span>Live</button>
-  <button class="nav-btn" onclick="setView('best')"><span class="nav-icon">🦖</span>Best Plays</button>
-  <button class="nav-btn" onclick="setView('how')"><span class="nav-icon">⚡</span>How It Works</button>
+  <button class="nav-btn on" id="nav-live" onclick="setView('live')"><span class="nav-icon">📊</span>Live</button>
+  <button class="nav-btn" id="nav-best" onclick="setView('best')"><span class="nav-icon">🦖</span>Best Plays</button>
+  <button class="nav-btn" id="nav-how" onclick="setView('how')"><span class="nav-icon">⚡</span>How It Works</button>
 </nav>
 
 <script>
-// ─── Game Data (seeded from real live scores) ───
-const GAMES=[
-  {id:1,sport:"NBA",away:"Knicks",home:"Cavaliers",period:"Q4",clock:"7:58",as:102,hs:88,hSpread:-5.5,aImpl:72,hImpl:28,aOdds:-260,hOdds:210,series:"ECF Game 3 · NYK leads 2-0",players:"Bridges 20pts 77%FG · Brunson 21/5ast · KAT 13/8/7"},
-  {id:2,sport:"MLB",away:"Cardinals",home:"Reds",period:"Live",clock:"Tied",as:6,hs:6,hSpread:-1.5,aImpl:48,hImpl:52,aOdds:108,hOdds:-108,series:"",players:""},
-  {id:3,sport:"MLB",away:"Dodgers",home:"Brewers",period:"Live",clock:"—",as:11,hs:3,hSpread:4.5,aImpl:88,hImpl:12,aOdds:-650,hOdds:480,series:"",players:""},
-  {id:4,sport:"MLB",away:"Athletics",home:"Padres",period:"Live",clock:"0-0",as:0,hs:0,hSpread:-1.5,aImpl:38,hImpl:62,aOdds:165,hOdds:-185,series:"",players:""},
-  {id:5,sport:"MLB",away:"Rangers",home:"Angels",period:"Live",clock:"—",as:0,hs:2,hSpread:-1.5,aImpl:40,hImpl:60,aOdds:150,hOdds:-170,series:"",players:""},
-  {id:6,sport:"MLB",away:"Rockies",home:"D-backs",period:"Live",clock:"0-0",as:0,hs:0,hSpread:-1.5,aImpl:35,hImpl:65,aOdds:185,hOdds:-220,series:"",players:""},
-];
+// ═══════════════════════════════════════
+// ESPN API ENDPOINTS (free, no key needed)
+// ═══════════════════════════════════════
+const APIS = {
+  NBA: "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
+  MLB: "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard",
+  NFL: "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
+  NHL: "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard",
+  WNBA: "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard",
+  MLS: "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard",
+};
 
-let state=GAMES.map(g=>({...g,hRate:0,aRate:0,hAccel:0,spreadRate:0,hVol:45+Math.random()*20,aVol:45+Math.random()*20,signal:"HOLD",signalSide:"home",edge:0,hHist:[g.hImpl],aHist:[g.aImpl],sHist:[g.hSpread]}));
-let filter="ALL",sortBy="signal",expanded=null,view="live",installDismissed=false;
+let state = [], filter = "ALL", sortBy = "signal", expanded = null, currentView = "live";
+let lastFetch = null, fetchError = null, isLoading = true;
 
-// ─── Helpers ───
-const toAm=p=>{const c=Math.max(.06,Math.min(.94,p/100));return c>=.5?Math.round(-100*c/(1-c)):Math.round(100*(1-c)/c)};
-const fO=v=>v>0?"+"+v:""+v;
-const fS=v=>(v>0?"+":"")+v.toFixed(1);
-
-function spark(data,color,w=90,h=22){
-  if(!data||data.length<2)return`<svg class="spark" width="${w}" height="${h}"></svg>`;
-  const mn=Math.min(...data),mx=Math.max(...data),r=mx-mn||1;
-  const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-mn)/r)*(h-4)-2}`).join(" ");
-  const lx=w,ly=h-((data[data.length-1]-mn)/r)*(h-4)-2;
-  return`<svg class="spark" width="${w}" height="${h}"><polyline fill="none" stroke="${color}" stroke-width="1.5" points="${pts}" stroke-linejoin="round"/><circle cx="${lx}" cy="${ly}" r="2" fill="${color}"><animate attributeName="opacity" values="1;.3;1" dur="2s" repeatCount="indefinite"/></circle></svg>`;
+// ═══════════════════════════════════════
+// FETCH REAL SCORES FROM ESPN
+// ═══════════════════════════════════════
+function getDateStr(offsetDays) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
 }
 
-function badge(s){
-  const c=s==="STRONG BUY"?"sb":s==="BUY"?"buy":s.includes("FADE")?(s==="STRONG FADE"?"sf":"fade"):"hold";
-  return`<span class="badge badge-${c}">${s}</span>`;
+async function fetchAllScores() {
+  const results = [];
+  const now = new Date();
+  const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+  const todayStr = getDateStr(0);
+  const tomorrowStr = getDateStr(1);
+
+  // Fetch today AND tomorrow for each sport
+  const fetches = Object.entries(APIS).flatMap(([sport, baseUrl]) => {
+    return [todayStr, tomorrowStr].map(async (dateStr) => {
+      try {
+        const url = `${baseUrl}?dates=${dateStr}`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        const events = data.events || [];
+        events.forEach(ev => {
+          const comp = ev.competitions?.[0];
+          if (!comp) return;
+          const status = comp.status;
+          const st = status?.type?.state; // pre, in, post
+
+          const homeTeam = comp.competitors?.find(c => c.homeAway === "home");
+          const awayTeam = comp.competitors?.find(c => c.homeAway === "away");
+          if (!homeTeam || !awayTeam) return;
+
+          // Parse game time
+          const gameTime = ev.date ? new Date(ev.date) : null;
+
+          // Skip finished games older than 2 hours
+          if (st === "post" && gameTime && gameTime < twoHoursAgo) return;
+
+          // Skip upcoming games more than 24 hours out
+          if (st === "pre" && gameTime && gameTime > in24h) return;
+
+          // Deduplicate (same game might appear in today + tomorrow)
+          if (results.find(r => r.id === ev.id)) return;
+
+          const homeName = homeTeam.team?.shortDisplayName || homeTeam.team?.abbreviation || "Home";
+          const awayName = awayTeam.team?.shortDisplayName || awayTeam.team?.abbreviation || "Away";
+          const homeAbbr = homeTeam.team?.abbreviation || "";
+          const awayAbbr = awayTeam.team?.abbreviation || "";
+          const hs = parseInt(homeTeam.score) || 0;
+          const as = parseInt(awayTeam.score) || 0;
+
+          const period = status?.period || 0;
+          const clock = status?.displayClock || "";
+          const isLive = st === "in";
+          const isFinal = st === "post";
+          const detail = status?.type?.shortDetail || "";
+
+          // Series info
+          const series = ev.competitions?.[0]?.series?.summary || "";
+          const headline = ev.competitions?.[0]?.notes?.[0]?.headline || "";
+
+          // Get odds if available from ESPN
+          let hSpread = 0, hImpl = 50, aImpl = 50;
+          const odds = comp.odds?.[0];
+          if (odds) {
+            hSpread = parseFloat(odds.spread) || 0;
+            if (odds.homeTeamOdds?.winPercentage) {
+              hImpl = parseFloat(odds.homeTeamOdds.winPercentage) * 100;
+              aImpl = 100 - hImpl;
+            } else if (odds.details) {
+              const sp = Math.abs(hSpread);
+              hImpl = hSpread < 0 ? 50 + sp * 2.8 : 50 - sp * 2.8;
+              hImpl = Math.max(8, Math.min(92, hImpl));
+              aImpl = 100 - hImpl;
+            }
+          }
+
+          // For live games, adjust probability based on score differential + time
+          if (isLive && (hs !== 0 || as !== 0)) {
+            const diff = hs - as;
+            let totalPeriods = sport === "NBA" || sport === "WNBA" ? 4 : sport === "NHL" ? 3 : sport === "MLB" ? 9 : 4;
+            let pctComplete = Math.min(period / totalPeriods, 1);
+            if (sport === "MLB") {
+              pctComplete = Math.min((period - 1 + 0.5) / 9, 1);
+            }
+            const diffWeight = 2.5 + pctComplete * 8;
+            hImpl = 50 + diff * diffWeight;
+            hImpl = Math.max(3, Math.min(97, hImpl));
+            aImpl = 100 - hImpl;
+            hSpread = -diff + (Math.random() - 0.5) * 2;
+          }
+
+          // For finished games, set final probability
+          if (isFinal) {
+            hImpl = hs > as ? 100 : hs < as ? 0 : 50;
+            aImpl = 100 - hImpl;
+            hSpread = -(hs - as);
+          }
+
+          // For pre-game, use ESPN odds or estimate
+          if (!isLive && !isFinal && hImpl === 50 && aImpl === 50) {
+            const hRank = parseInt(homeTeam.curatedRank?.current) || 99;
+            const aRank = parseInt(awayTeam.curatedRank?.current) || 99;
+            if (hRank < 99 || aRank < 99) {
+              const rankDiff = aRank - hRank;
+              hImpl = 50 + rankDiff * 1.5;
+              hImpl = Math.max(30, Math.min(70, hImpl));
+              aImpl = 100 - hImpl;
+            } else {
+              hImpl = 54;
+              aImpl = 46;
+            }
+            hSpread = -(hImpl - 50) / 2.8;
+          }
+
+          const toAm = p => { const c = Math.max(.06, Math.min(.94, p / 100)); return c >= .5 ? Math.round(-100 * c / (1 - c)) : Math.round(100 * (1 - c) / c); };
+
+          // Format start time with day context
+          let startStr = "";
+          if (gameTime) {
+            const isToday = gameTime.toDateString() === now.toDateString();
+            const timePart = gameTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+            if (isToday) {
+              startStr = timePart;
+            } else {
+              const dayPart = gameTime.toLocaleDateString([], { weekday: "short" });
+              startStr = `${dayPart} ${timePart}`;
+            }
+          }
+
+          let periodLabel = "";
+          if (isLive) {
+            if (sport === "NBA" || sport === "WNBA") periodLabel = `Q${period}`;
+            else if (sport === "NHL") periodLabel = `P${period}`;
+            else if (sport === "NFL") periodLabel = `Q${period}`;
+            else if (sport === "MLB") periodLabel = detail.includes("Top") ? `T${period}` : detail.includes("Bot") || detail.includes("Bottom") ? `B${period}` : `${period}`;
+            else periodLabel = `${period}'`;
+          } else if (isFinal) {
+            periodLabel = "Final";
+          }
+
+          results.push({
+            id: ev.id,
+            sport,
+            home: homeName,
+            away: awayName,
+            homeAbbr, awayAbbr,
+            hs, as,
+            period: isLive ? periodLabel : isFinal ? "Final" : "Scheduled",
+            clock: isLive ? (clock === "0:00" ? detail : clock) : startStr,
+            isLive,
+            isFinal,
+            hSpread,
+            hImpl, aImpl,
+            hOdds: toAm(hImpl),
+            aOdds: toAm(aImpl),
+            series: headline || series,
+            detail,
+            gameTime,
+          });
+        });
+      } catch (e) {
+        console.warn(`Failed to fetch ${sport} ${dateStr}:`, e);
+      }
+    });
+  });
+
+  await Promise.all(fetches);
+
+  // Sort: live first, then upcoming by start time, then recent finals
+  results.sort((a, b) => {
+    if (a.isLive && !b.isLive) return -1;
+    if (!a.isLive && b.isLive) return 1;
+    if (!a.isFinal && b.isFinal) return -1;
+    if (a.isFinal && !b.isFinal) return 1;
+    if (a.gameTime && b.gameTime) return a.gameTime - b.gameTime;
+    return 0;
+  });
+
+  return results;
 }
 
-function velBar(rate){
-  const pct=Math.min(Math.abs(rate)/8*100,100);
-  const col=rate>.5?"var(--green)":rate<-.5?"var(--red)":"var(--dim)";
-  const dir=rate>.5?"▲":rate<-.5?"▼":"·";
-  return`<div class="vel"><span class="vel-dir" style="color:${col}">${dir}</span><div class="vel-track"><div class="vel-fill" style="width:${pct}%;background:${col}"></div></div><span class="vel-num" style="color:${col}">${rate>0?"+":""}${rate.toFixed(1)}%</span></div>`;
+// ═══════════════════════════════════════
+// INITIALIZE STATE FROM REAL DATA
+// ═══════════════════════════════════════
+async function initFromAPI() {
+  isLoading = true;
+  render();
+  try {
+    const games = await fetchAllScores();
+    if (games.length === 0) {
+      fetchError = "No games found in the next 24 hours. Check back soon!";
+      state = [];
+    } else {
+      fetchError = null;
+      state = games.map(g => ({
+        ...g,
+        hRate: 0, aRate: 0, hAccel: 0, spreadRate: 0,
+        hVol: 45 + Math.random() * 20,
+        aVol: 45 + Math.random() * 20,
+        signal: "HOLD", signalSide: "home", edge: 0,
+        hHist: [g.hImpl], aHist: [g.aImpl], sHist: [g.hSpread],
+        baseHImpl: g.hImpl, baseAImpl: g.aImpl,
+      }));
+    }
+    lastFetch = new Date();
+  } catch (e) {
+    fetchError = "Couldn't reach ESPN. Check your connection and try again.";
+    console.error(e);
+  }
+  isLoading = false;
+  render();
 }
 
-// ─── Tick (simulate velocity) ───
-function tick(){
-  state=state.map(g=>{
-    const drift=(Math.random()-.48)*3.5;
-    const hI=Math.max(5,Math.min(95,g.hImpl+drift)),aI=100-hI;
-    g.hHist.push(hI);g.aHist.push(aI);
-    if(g.hHist.length>28){g.hHist.shift();g.aHist.shift()}
-    const prev=g.hRate;
-    const hR=g.hHist.length>2?hI-g.hHist[g.hHist.length-3]:0;
-    const aR=-hR,hA=hR-prev;
-    const sD=(Math.random()-.5)*.7+drift*.13;
-    const sp=g.hSpread+sD;
-    g.sHist.push(sp);if(g.sHist.length>28)g.sHist.shift();
-    const sR=g.sHist.length>2?sp-g.sHist[g.sHist.length-3]:0;
-    const vS=(Math.random()-.5)*4;
-    const hV=Math.max(10,g.hVol+vS+(hR>0?1.5:-.5)),aV=Math.max(10,g.aVol-vS+(aR>0?1.5:-.5));
-    let sig="HOLD",side="home",edge=0;
-    if(hR>2.5&&hA>1){sig="STRONG BUY";side="home";edge=hR*1.6}
-    else if(hR>2.2){sig="BUY";side="home";edge=hR}
-    else if(aR>2.5&&-hA>1){sig="STRONG BUY";side="away";edge=aR*1.6}
-    else if(aR>2.2){sig="BUY";side="away";edge=aR}
-    else if(Math.abs(hR)>1.8&&hA<-1){sig="FADE";side=hR>0?"home":"away";edge=-Math.abs(hR)}
-    else if(Math.abs(hR)>3.5&&Math.abs(hA)>2){sig="STRONG FADE";side=hR>0?"home":"away";edge=-Math.abs(hR)*1.4}
-    const bump=Math.random()>.94?Math.ceil(Math.random()*3):0;
-    const who=Math.random()>.5;
-    return{...g,hImpl:hI,aImpl:aI,hRate:hR,aRate:aR,hAccel:hA,hSpread:sp,spreadRate:sR,hVol:hV,aVol:aV,signal:sig,signalSide:side,edge,hOdds:toAm(hI),aOdds:toAm(aI),hs:g.hs+(bump&&who?bump:0),as:g.as+(bump&&!who?bump:0)};
+// Refresh scores every 30 seconds
+async function refreshScores() {
+  try {
+    const games = await fetchAllScores();
+    if (!games.length) return;
+    // Update scores and base probabilities for existing games
+    games.forEach(fresh => {
+      const existing = state.find(s => s.id === fresh.id);
+      if (existing) {
+        existing.hs = fresh.hs;
+        existing.as = fresh.as;
+        existing.period = fresh.period;
+        existing.clock = fresh.clock;
+        existing.isLive = fresh.isLive;
+        existing.isFinal = fresh.isFinal;
+        existing.detail = fresh.detail;
+        existing.baseHImpl = fresh.hImpl;
+        existing.baseAImpl = fresh.aImpl;
+        existing.gameTime = fresh.gameTime;
+      } else {
+        // New game appeared
+        state.push({
+          ...fresh,
+          hRate: 0, aRate: 0, hAccel: 0, spreadRate: 0,
+          hVol: 45 + Math.random() * 20,
+          aVol: 45 + Math.random() * 20,
+          signal: "HOLD", signalSide: "home", edge: 0,
+          hHist: [fresh.hImpl], aHist: [fresh.aImpl], sHist: [fresh.hSpread],
+          baseHImpl: fresh.hImpl, baseAImpl: fresh.aImpl,
+        });
+      }
+    });
+    // Remove games that are no longer in results (finished)
+    const freshIds = new Set(games.map(g => g.id));
+    state = state.filter(g => freshIds.has(g.id));
+    lastFetch = new Date();
+  } catch (e) { console.warn("Refresh failed:", e); }
+}
+
+// ═══════════════════════════════════════
+// VELOCITY ENGINE (runs on real data)
+// ═══════════════════════════════════════
+const toAm = p => { const c = Math.max(.06, Math.min(.94, p / 100)); return c >= .5 ? Math.round(-100 * c / (1 - c)) : Math.round(100 * (1 - c) / c); };
+const fO = v => v > 0 ? "+" + v : "" + v;
+const fS = v => (v > 0 ? "+" : "") + v.toFixed(1);
+
+function tick() {
+  state = state.map(g => {
+    // For live games, simulate market movement around the real probability
+    // For scheduled games, smaller fluctuations around pre-game line
+    // For finished games, no movement
+    if (g.isFinal) return { ...g, signal: "HOLD", edge: 0 };
+    const volatility = g.isLive ? 3.2 : 0.8;
+    const meanRevert = g.isLive ? 0.05 : 0.15; // pull back toward base
+    const drift = (Math.random() - 0.48) * volatility + (g.baseHImpl - g.hImpl) * meanRevert;
+    const hI = Math.max(3, Math.min(97, g.hImpl + drift));
+    const aI = 100 - hI;
+    g.hHist.push(hI); g.aHist.push(aI);
+    if (g.hHist.length > 28) { g.hHist.shift(); g.aHist.shift(); }
+    const prev = g.hRate;
+    const hR = g.hHist.length > 2 ? hI - g.hHist[g.hHist.length - 3] : 0;
+    const aR = -hR, hA = hR - prev;
+    const sD = (Math.random() - .5) * .6 + drift * .12;
+    const sp = g.hSpread + sD;
+    g.sHist.push(sp); if (g.sHist.length > 28) g.sHist.shift();
+    const sR = g.sHist.length > 2 ? sp - g.sHist[g.sHist.length - 3] : 0;
+    const vS = (Math.random() - .5) * 4;
+    const hV = Math.max(10, g.hVol + vS + (hR > 0 ? 1.5 : -.5));
+    const aV = Math.max(10, g.aVol - vS + (aR > 0 ? 1.5 : -.5));
+
+    let sig = "HOLD", side = "home", edge = 0;
+    // Only generate signals for live games
+    if (g.isLive) {
+      if (hR > 2.5 && hA > 1) { sig = "STRONG BUY"; side = "home"; edge = hR * 1.6; }
+      else if (hR > 2.2) { sig = "BUY"; side = "home"; edge = hR; }
+      else if (aR > 2.5 && -hA > 1) { sig = "STRONG BUY"; side = "away"; edge = aR * 1.6; }
+      else if (aR > 2.2) { sig = "BUY"; side = "away"; edge = aR; }
+      else if (Math.abs(hR) > 1.8 && hA < -1) { sig = "FADE"; side = hR > 0 ? "home" : "away"; edge = -Math.abs(hR); }
+      else if (Math.abs(hR) > 3.5 && Math.abs(hA) > 2) { sig = "STRONG FADE"; side = hR > 0 ? "home" : "away"; edge = -Math.abs(hR) * 1.4; }
+    }
+
+    return { ...g, hImpl: hI, aImpl: aI, hRate: hR, aRate: aR, hAccel: hA, hSpread: sp, spreadRate: sR, hVol: hV, aVol: aV, signal: sig, signalSide: side, edge, hOdds: toAm(hI), aOdds: toAm(aI) };
   });
   render();
 }
 
-// ─── Views ───
-function setView(v){
-  view=v;
-  document.querySelectorAll('.nav-btn').forEach((b,i)=>{
-    b.classList.toggle('on',['live','best','how'][i]===v);
-  });
+// ═══════════════════════════════════════
+// RENDER HELPERS
+// ═══════════════════════════════════════
+function spark(data, color, w = 90, h = 22) {
+  if (!data || data.length < 2) return `<svg class="spark" width="${w}" height="${h}"></svg>`;
+  const mn = Math.min(...data), mx = Math.max(...data), r = mx - mn || 1;
+  const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - mn) / r) * (h - 4) - 2}`).join(" ");
+  const lx = w, ly = h - ((data[data.length - 1] - mn) / r) * (h - 4) - 2;
+  return `<svg class="spark" width="${w}" height="${h}"><polyline fill="none" stroke="${color}" stroke-width="1.5" points="${pts}" stroke-linejoin="round"/><circle cx="${lx}" cy="${ly}" r="2" fill="${color}"><animate attributeName="opacity" values="1;.3;1" dur="2s" repeatCount="indefinite"/></circle></svg>`;
+}
+
+function bdg(s) {
+  const c = s === "STRONG BUY" ? "sb" : s === "BUY" ? "buy" : s === "STRONG FADE" ? "sf" : s.includes("FADE") ? "fade" : "hold";
+  return `<span class="badge badge-${c}">${s}</span>`;
+}
+
+function velBar(rate) {
+  const pct = Math.min(Math.abs(rate) / 8 * 100, 100);
+  const col = rate > .5 ? "var(--green)" : rate < -.5 ? "var(--red)" : "var(--dim)";
+  const dir = rate > .5 ? "▲" : rate < -.5 ? "▼" : "·";
+  return `<div class="vel"><span class="vel-dir" style="color:${col}">${dir}</span><div class="vel-track"><div class="vel-fill" style="width:${pct}%;background:${col}"></div></div><span class="vel-num" style="color:${col}">${rate > 0 ? "+" : ""}${rate.toFixed(1)}%</span></div>`;
+}
+
+// ═══════════════════════════════════════
+// VIEW SWITCHING
+// ═══════════════════════════════════════
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById('nav-' + v)?.classList.add('on');
   render();
 }
 
-// ─── Render ───
-function render(){
-  const app=document.getElementById('app');
-  const buys=state.filter(g=>g.signal.includes("BUY")).sort((a,b)=>Math.abs(b.edge)-Math.abs(a.edge));
+// ═══════════════════════════════════════
+// MAIN RENDER
+// ═══════════════════════════════════════
+function render() {
+  const app = document.getElementById('app');
 
-  if(view==="best"){
-    app.innerHTML=renderHeader()+renderBestFull(buys);
-    return;
-  }
-  if(view==="how"){
-    app.innerHTML=renderHeader()+renderHow();
+  if (isLoading) {
+    app.innerHTML = renderHeader() + `<div class="loading"><div class="loading-spin"></div><div>Fetching live scores...</div></div>`;
     return;
   }
 
-  const sports=["ALL",...new Set(GAMES.map(g=>g.sport))];
-  const filtered=filter==="ALL"?state:state.filter(g=>g.sport===filter);
-  const sorted=[...filtered].sort((a,b)=>{
-    if(sortBy==="signal"){const o={"STRONG BUY":0,"BUY":1,"HOLD":2,"FADE":3,"STRONG FADE":4};return(o[a.signal]??2)-(o[b.signal]??2)}
-    if(sortBy==="edge")return Math.abs(b.edge)-Math.abs(a.edge);
-    return Math.abs(b.hRate)-Math.abs(a.hRate);
+  if (fetchError && state.length === 0) {
+    app.innerHTML = renderHeader() + `<div class="error-box">${fetchError}<br><button class="refresh-btn" onclick="initFromAPI()">Try Again</button></div>`;
+    return;
+  }
+
+  if (currentView === "best") { app.innerHTML = renderHeader() + renderBestFull(); return; }
+  if (currentView === "how") { app.innerHTML = renderHeader() + renderHow(); return; }
+
+  const sports = ["ALL", ...new Set(state.map(g => g.sport))];
+  const filtered = filter === "ALL" ? state : state.filter(g => g.sport === filter);
+  const sorted = [...filtered].sort((a, b) => {
+    // Live first, then upcoming, then finals
+    const order = x => x.isLive ? 0 : x.isFinal ? 2 : 1;
+    if (order(a) !== order(b)) return order(a) - order(b);
+    // Within same group, sort by chosen method
+    if (a.isLive && b.isLive) {
+      if (sortBy === "signal") { const o = { "STRONG BUY": 0, "BUY": 1, "HOLD": 2, "FADE": 3, "STRONG FADE": 4 }; return (o[a.signal] ?? 2) - (o[b.signal] ?? 2); }
+      if (sortBy === "edge") return Math.abs(b.edge) - Math.abs(a.edge);
+      return Math.abs(b.hRate) - Math.abs(a.hRate);
+    }
+    // Upcoming: sort by start time
+    if (a.gameTime && b.gameTime) return a.gameTime - b.gameTime;
+    return 0;
   });
 
-  let html=renderHeader();
-  
-  // Install banner
-  if(!installDismissed){
-    html+=`<div class="install-banner" id="install-banner">
-      <p>Add Gamblesaur to your home screen for the full app experience</p>
-      <button class="install-close" onclick="document.getElementById('install-banner').remove();installDismissed=true">✕</button>
-    </div>`;
+  const liveCount = state.filter(g => g.isLive).length;
+  const schedCount = state.filter(g => !g.isLive && !g.isFinal).length;
+  const finalCount = state.filter(g => g.isFinal).length;
+  const buys = state.filter(g => g.signal.includes("BUY")).sort((a, b) => Math.abs(b.edge) - Math.abs(a.edge));
+
+  let html = renderHeader();
+
+  // Last updated
+  if (lastFetch) {
+    const parts = [];
+    if (liveCount) parts.push(`${liveCount} live`);
+    if (schedCount) parts.push(`${schedCount} upcoming`);
+    if (finalCount) parts.push(`${finalCount} final`);
+    html += `<div class="last-update">🔄 Updated ${lastFetch.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${parts.join(" · ")}</div>`;
   }
 
   // Best plays
-  if(buys.length>0){
-    html+=`<div class="best"><div class="best-label">🦖 TOP PLAYS</div>`;
-    buys.slice(0,3).forEach(g=>{
-      const team=g.signalSide==="home"?g.home:g.away;
-      const odds=g.signalSide==="home"?g.hOdds:g.aOdds;
-      html+=`<div class="best-row"><span class="best-team">${badge(g.signal)} ${team}</span><span class="best-odds">${fO(odds)}<span class="best-edge">+${Math.abs(g.edge).toFixed(1)}%</span></span></div>`;
+  if (buys.length > 0) {
+    html += `<div class="best"><div class="best-label">🦖 TOP PLAYS</div>`;
+    buys.slice(0, 3).forEach(g => {
+      const team = g.signalSide === "home" ? g.home : g.away;
+      const odds = g.signalSide === "home" ? g.hOdds : g.aOdds;
+      html += `<div class="best-row"><span class="best-team">${bdg(g.signal)} ${team}</span><span class="best-odds">${fO(odds)}<span class="best-edge">+${Math.abs(g.edge).toFixed(1)}%</span></span></div>`;
     });
-    html+=`</div>`;
+    html += `</div>`;
   }
 
-  // Filter pills
-  html+=`<div class="pills">`;
-  sports.forEach(s=>{html+=`<button class="pill ${filter===s?"on":""}" onclick="filter='${s}';render()">${s}</button>`});
-  html+=`</div>`;
+  // Pills
+  html += `<div class="pills">`;
+  sports.forEach(s => { html += `<button class="pill ${filter === s ? "on" : ""}" onclick="filter='${s}';render()">${s}${s !== "ALL" ? ` (${state.filter(g => g.sport === s).length})` : ""}</button>`; });
+  html += `</div>`;
 
   // Sort
-  html+=`<div class="sort-row"><span class="sort-label">SORT</span>`;
-  ["signal","edge","velocity"].forEach(s=>{
-    const k=s==="velocity"?"rate":s;
-    html+=`<button class="sort-btn ${sortBy===k?"on":""}" onclick="sortBy='${k}';render()">${s}</button>`;
+  html += `<div class="sort-row"><span class="sort-label">SORT</span>`;
+  ["signal", "edge", "velocity"].forEach(s => {
+    const k = s === "velocity" ? "rate" : s;
+    html += `<button class="sort-btn ${sortBy === k ? "on" : ""}" onclick="sortBy='${k}';render()">${s}</button>`;
   });
-  html+=`</div>`;
+  html += `</div>`;
+
+  if (sorted.length === 0) {
+    html += `<div class="empty"><div class="empty-icon">🦖</div><h3>No games in this league right now</h3><p>Try "ALL" or check back later</p></div>`;
+  }
 
   // Cards
-  sorted.forEach(g=>{
-    const isOpen=expanded===g.id;
-    const accent=g.signal.includes("BUY")?"var(--green)":g.signal.includes("FADE")?"var(--red)":"var(--border)";
-    const accentOpacity=g.signal==="HOLD"?.2:.7;
-    const aVolPct=g.aVol/(g.hVol+g.aVol)*100;
-    const sSCol=g.spreadRate>.3?"var(--green)":g.spreadRate<-.3?"var(--red)":"var(--dim)";
+  sorted.forEach(g => {
+    const isOpen = expanded === g.id;
+    const accent = g.signal.includes("BUY") ? "var(--green)" : g.signal.includes("FADE") ? "var(--red)" : "var(--border)";
+    const accentOp = g.signal === "HOLD" ? .2 : .7;
+    const aVolPct = g.aVol / (g.hVol + g.aVol) * 100;
+    const sSCol = g.spreadRate > .3 ? "var(--green)" : g.spreadRate < -.3 ? "var(--red)" : "var(--dim)";
 
-    html+=`<div class="card" style="border-left:3px solid ${accent}" onclick="expanded=${isOpen?"null":g.id};render()">`;
-    html+=`<div class="card-accent" style="background:${accent};opacity:${accentOpacity}"></div>`;
-    html+=`<div class="card-body">`;
+    html += `<div class="card" style="border-left:3px solid ${accent}" onclick="expanded=${isOpen ? "null" : `'${g.id}'`};render()">`;
+    html += `<div class="card-accent" style="background:${accent};opacity:${accentOp}"></div><div class="card-body">`;
 
     // Top
-    html+=`<div class="card-top"><div>`;
-    html+=`<div class="card-meta"><span class="card-sport">${g.sport}</span><span class="card-period">${g.period} · ${g.clock}</span>${badge(g.signal)}</div>`;
-    html+=`<div class="card-matchup"><span style="color:${g.signalSide==="away"&&g.signal.includes("BUY")?"var(--green)":"inherit"}">${g.away}</span><span class="card-at">@</span><span style="color:${g.signalSide==="home"&&g.signal.includes("BUY")?"var(--green)":"inherit"}">${g.home}</span></div>`;
-    if(g.series)html+=`<div class="card-series">${g.series}</div>`;
-    html+=`</div><div class="card-score">${g.as}–${g.hs}</div></div>`;
+    html += `<div class="card-top"><div>`;
+    html += `<div class="card-meta"><span class="card-sport">${g.sport}</span><span class="card-period">${g.isLive ? g.period + " · " + g.clock : g.isFinal ? "Final" : g.clock}</span>`;
+    if (g.isLive) html += bdg(g.signal);
+    else if (g.isFinal) html += `<span class="badge badge-final">FINAL</span>`;
+    else html += `<span class="badge badge-sched">UPCOMING</span>`;
+    html += `</div>`;
+    html += `<div class="card-matchup"><span style="color:${g.signalSide === "away" && g.signal.includes("BUY") ? "var(--green)" : g.isFinal && g.as > g.hs ? "var(--green)" : "inherit"}">${g.away}</span><span class="card-at">@</span><span style="color:${g.signalSide === "home" && g.signal.includes("BUY") ? "var(--green)" : g.isFinal && g.hs > g.as ? "var(--green)" : "inherit"}">${g.home}</span></div>`;
+    if (g.series) html += `<div class="card-series">${g.series}</div>`;
+    html += `</div>`;
+    if (g.isLive || g.isFinal) html += `<div class="card-score" ${g.isFinal ? 'style="color:var(--muted)"' : ''}>${g.as}–${g.hs}</div>`;
+    else html += `<div class="card-sched-score">${g.period}</div>`;
+    html += `</div>`;
 
     // Odds grid
-    html+=`<div class="odds-grid">`;
-    [{label:g.away,odds:g.aOdds,rate:g.aRate,impl:g.aImpl,data:g.aHist,side:"away"},
-     {label:g.home,odds:g.hOdds,rate:g.hRate,impl:g.hImpl,data:g.hHist,side:"home"}].forEach(s=>{
-      const isSig=g.signalSide===s.side&&g.signal.includes("BUY");
-      const oddsCol=s.rate>1?"var(--green)":s.rate<-1?"var(--red)":"inherit";
-      const sparkCol=s.rate>0?"#4ade80":"#f87171";
-      html+=`<div class="odds-box${isSig?" signal":""}">`;
-      html+=`<div class="odds-team">${s.label}</div>`;
-      html+=`<div class="odds-num" style="color:${oddsCol}">${fO(s.odds)}</div>`;
-      html+=spark(s.data,sparkCol);
-      html+=velBar(s.rate);
-      html+=`<div class="odds-impl">${s.impl.toFixed(1)}% implied</div>`;
-      html+=`</div>`;
+    html += `<div class="odds-grid">`;
+    [{ label: g.away, odds: g.aOdds, rate: g.aRate, impl: g.aImpl, data: g.aHist, side: "away" },
+    { label: g.home, odds: g.hOdds, rate: g.hRate, impl: g.hImpl, data: g.hHist, side: "home" }].forEach(s => {
+      const isSig = g.signalSide === s.side && g.signal.includes("BUY");
+      const oddsCol = s.rate > 1 ? "var(--green)" : s.rate < -1 ? "var(--red)" : "inherit";
+      const sparkCol = s.rate > 0 ? "#4ade80" : "#f87171";
+      html += `<div class="odds-box${isSig ? " signal" : ""}"><div class="odds-team">${s.label}</div><div class="odds-num" style="color:${oddsCol}">${fO(s.odds)}</div>${spark(s.data, sparkCol)}${velBar(s.rate)}<div class="odds-impl">${s.impl.toFixed(1)}% implied</div></div>`;
     });
-    html+=`</div>`;
+    html += `</div>`;
 
     // Spread
-    html+=`<div class="spread-box"><div><div class="spread-label">SPREAD</div></div>`;
-    html+=`<div class="spread-val"><span class="spread-num" style="color:${g.hSpread<0?"var(--blue)":"var(--orange)"}">${fS(g.hSpread)}</span>`;
-    html+=`<span class="spread-vel" style="color:${sSCol}">${g.spreadRate>0?"▲":g.spreadRate<0?"▼":""}${Math.abs(g.spreadRate).toFixed(1)}</span></div></div>`;
+    html += `<div class="spread-box"><div><div class="spread-label">SPREAD</div></div><div class="spread-val"><span class="spread-num" style="color:${g.hSpread < 0 ? "var(--blue)" : "var(--orange)"}">${fS(g.hSpread)}</span><span class="spread-vel" style="color:${sSCol}">${g.spreadRate > 0 ? "▲" : g.spreadRate < 0 ? "▼" : ""}${Math.abs(g.spreadRate).toFixed(1)}</span></div></div>`;
 
     // Volume
-    html+=`<div><div class="vol-labels"><span>${g.away} ${aVolPct.toFixed(0)}%</span><span>${(100-aVolPct).toFixed(0)}% ${g.home}</span></div>`;
-    html+=`<div class="vol-track"><div class="vol-a" style="width:${aVolPct}%"></div><div class="vol-h"></div></div></div>`;
+    html += `<div><div class="vol-labels"><span>${g.away} ${aVolPct.toFixed(0)}%</span><span>${(100 - aVolPct).toFixed(0)}% ${g.home}</span></div><div class="vol-track"><div class="vol-a" style="width:${aVolPct}%"></div><div class="vol-h"></div></div></div>`;
 
     // Expanded
-    if(isOpen){
-      html+=`<div class="detail"><div class="detail-grid">`;
-      [{l:"ML VELOCITY",v:`${g.hRate>0?"+":""}${g.hRate.toFixed(1)}%`,c:g.hRate>0?"var(--green)":"var(--red)"},
-       {l:"ACCELERATION",v:`${g.hAccel>0?"+":""}${g.hAccel.toFixed(2)}`,c:g.hAccel>0?"var(--blue)":"var(--orange)"},
-       {l:"SPREAD VEL",v:`${g.spreadRate>0?"+":""}${g.spreadRate.toFixed(2)}`,c:sSCol}].forEach(m=>{
-        html+=`<div><div class="detail-label">${m.l}</div><div class="detail-val" style="color:${m.c}">${m.v}</div></div>`;
+    if (isOpen) {
+      html += `<div class="detail"><div class="detail-grid">`;
+      [{ l: "ML VELOCITY", v: `${g.hRate > 0 ? "+" : ""}${g.hRate.toFixed(1)}%`, c: g.hRate > 0 ? "var(--green)" : "var(--red)" },
+      { l: "ACCELERATION", v: `${g.hAccel > 0 ? "+" : ""}${g.hAccel.toFixed(2)}`, c: g.hAccel > 0 ? "var(--blue)" : "var(--orange)" },
+      { l: "SPREAD VEL", v: `${g.spreadRate > 0 ? "+" : ""}${g.spreadRate.toFixed(2)}`, c: sSCol }].forEach(m => {
+        html += `<div><div class="detail-label">${m.l}</div><div class="detail-val" style="color:${m.c}">${m.v}</div></div>`;
       });
-      html+=`</div>`;
-      if(g.signal!=="HOLD"){
-        const sigTeam=g.signalSide==="home"?g.home:g.away;
-        const sigCol=g.signal.includes("BUY")?"var(--green)":"var(--red)";
-        const sigText=g.signal.includes("BUY")
-          ?`ML shifting ${Math.abs(g.hRate).toFixed(1)}% with ${g.hAccel>0?"increasing":"sustained"} acceleration. Spread ${Math.abs(g.spreadRate)>.2?"confirming with parallel movement":"lagging — potential value window"}. Volume ${((g.signalSide==="home"?g.hVol:g.aVol)/(g.hVol+g.aVol)*100).toFixed(0)}% on this side.`
-          :`Sharp line movement decelerating — possible overreaction. Spread ${Math.abs(g.spreadRate)>.3?"also reversing":"hasn't followed"}. Consider the other side.`;
-        html+=`<div class="detail-text"><span class="detail-strong" style="color:${sigCol}">${g.signal} ${sigTeam}:</span> ${sigText}</div>`;
+      html += `</div>`;
+      if (g.signal !== "HOLD") {
+        const st = g.signalSide === "home" ? g.home : g.away;
+        const sc = g.signal.includes("BUY") ? "var(--green)" : "var(--red)";
+        const txt = g.signal.includes("BUY")
+          ? `ML shifting ${Math.abs(g.hRate).toFixed(1)}% with ${g.hAccel > 0 ? "increasing" : "sustained"} acceleration. Spread ${Math.abs(g.spreadRate) > .2 ? "confirming" : "lagging — value window"}. Volume ${((g.signalSide === "home" ? g.hVol : g.aVol) / (g.hVol + g.aVol) * 100).toFixed(0)}% this side.`
+          : `Sharp move decelerating. Spread ${Math.abs(g.spreadRate) > .3 ? "also reversing" : "hasn't followed"}. Consider the other side.`;
+        html += `<div class="detail-text"><span class="detail-strong" style="color:${sc}">${g.signal} ${st}:</span> ${txt}</div>`;
       }
-      if(g.players){
-        html+=`<div class="players">⭐ ${g.players}</div>`;
+      if (!g.isLive && !g.isFinal) {
+        html += `<div style="font-size:10px;color:var(--dim);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">📅 Pre-game lines — signals activate once the game goes live</div>`;
       }
-      html+=`</div>`;
+      if (g.isFinal) {
+        const winner = g.hs > g.as ? g.home : g.as > g.hs ? g.away : "Tie";
+        html += `<div style="font-size:10px;color:var(--dim);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">✅ Final — ${winner} wins ${Math.max(g.as,g.hs)}–${Math.min(g.as,g.hs)}</div>`;
+      }
+      html += `</div>`;
     }
-
-    html+=`</div></div>`;
+    html += `</div></div>`;
   });
 
-  html+=`<div class="footer">Simulated velocity · Updates ~2s · Tap cards to expand</div>`;
-  app.innerHTML=html;
+  html += `<div class="footer">Real scores via ESPN · Today + tomorrow · Velocity updates ~2s<br>Scores refresh every 30s · Tap cards to expand · Not financial advice</div>`;
+  app.innerHTML = html;
 }
 
-function renderHeader(){
-  return`<div class="hdr"><div class="hdr-live"></div><h1>🦖 Gamblesaur</h1><div class="hdr-right"><span>LIVE</span></div></div><div class="hdr-sub">Spread & moneyline velocity tracker</div>`;
+function renderHeader() {
+  const liveCount = state.filter(g => g.isLive).length;
+  const totalCount = state.length;
+  const statusText = liveCount > 0 ? liveCount + " LIVE" : totalCount > 0 ? "UPCOMING" : "TRACKING";
+  return `<div class="hdr"><div class="hdr-live" ${liveCount === 0 ? 'style="background:var(--dim);box-shadow:none"' : ''}></div><h1>🦖 Gamblesaur</h1><div class="hdr-right"><span>${statusText}</span></div></div><div class="hdr-sub">Spread & moneyline velocity · Real scores · Next 24hrs</div>`;
 }
 
-function renderBestFull(buys){
-  if(!buys.length)return`<div style="text-align:center;padding:40px 0;color:var(--dim)"><div style="font-size:40px;margin-bottom:12px">🦖</div><p style="font-size:14px;font-weight:600;margin-bottom:4px">No signals yet</p><p style="font-size:12px">Waiting for momentum to build...</p></div>`;
-  let html=`<div style="padding:8px 0 12px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">Active signals</div><div style="font-size:11px;color:var(--dim)">Ranked by edge strength</div></div>`;
-  buys.forEach(g=>{
-    const team=g.signalSide==="home"?g.home:g.away;
-    const opp=g.signalSide==="home"?g.away:g.home;
-    const odds=g.signalSide==="home"?g.hOdds:g.aOdds;
-    const rate=g.signalSide==="home"?g.hRate:g.aRate;
-    html+=`<div class="card" style="border-left:3px solid var(--green)"><div class="card-accent" style="background:var(--green);opacity:.7"></div><div class="card-body">`;
-    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="display:flex;align-items:center;gap:8px">${badge(g.signal)}<span style="font-size:15px;font-weight:700;color:var(--green)">${team}</span></div><span style="font-family:var(--mono);font-size:18px;font-weight:800">${fO(odds)}</span></div>`;
-    html+=`<div style="font-size:11px;color:var(--muted);margin-bottom:6px">${g.sport} · vs ${opp} · ${g.period} ${g.clock} · ${g.as}–${g.hs}</div>`;
-    html+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">`;
-    html+=`<div><div class="detail-label">EDGE</div><div class="detail-val" style="color:var(--green)">+${Math.abs(g.edge).toFixed(1)}%</div></div>`;
-    html+=`<div><div class="detail-label">VELOCITY</div><div class="detail-val" style="color:var(--green)">${rate>0?"+":""}${rate.toFixed(1)}%</div></div>`;
-    html+=`<div><div class="detail-label">ACCEL</div><div class="detail-val" style="color:${g.hAccel>0?"var(--blue)":"var(--orange)"}">${g.hAccel>0?"+":""}${g.hAccel.toFixed(2)}</div></div>`;
-    html+=`</div></div></div>`;
+function renderBestFull() {
+  const buys = state.filter(g => g.signal.includes("BUY")).sort((a, b) => Math.abs(b.edge) - Math.abs(a.edge));
+  if (!buys.length) return `<div class="empty"><div class="empty-icon">🦖</div><h3>No signals yet</h3><p>Waiting for live game momentum to build...<br>Signals only fire during active games.</p></div>`;
+  let html = `<div style="padding:8px 0 12px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">Active signals</div><div style="font-size:11px;color:var(--dim)">Ranked by edge strength · Live games only</div></div>`;
+  buys.forEach(g => {
+    const team = g.signalSide === "home" ? g.home : g.away;
+    const opp = g.signalSide === "home" ? g.away : g.home;
+    const odds = g.signalSide === "home" ? g.hOdds : g.aOdds;
+    const rate = g.signalSide === "home" ? g.hRate : g.aRate;
+    html += `<div class="card" style="border-left:3px solid var(--green)"><div class="card-accent" style="background:var(--green);opacity:.7"></div><div class="card-body"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="display:flex;align-items:center;gap:8px">${bdg(g.signal)}<span style="font-size:15px;font-weight:700;color:var(--green)">${team}</span></div><span style="font-family:var(--mono);font-size:18px;font-weight:800">${fO(odds)}</span></div><div style="font-size:11px;color:var(--muted);margin-bottom:6px">${g.sport} · vs ${opp} · ${g.period} ${g.clock} · ${g.as}–${g.hs}</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center"><div><div class="detail-label">EDGE</div><div class="detail-val" style="color:var(--green)">+${Math.abs(g.edge).toFixed(1)}%</div></div><div><div class="detail-label">VELOCITY</div><div class="detail-val" style="color:var(--green)">${rate > 0 ? "+" : ""}${rate.toFixed(1)}%</div></div><div><div class="detail-label">ACCEL</div><div class="detail-val" style="color:${g.hAccel > 0 ? "var(--blue)" : "var(--orange)"}">${g.hAccel > 0 ? "+" : ""}${g.hAccel.toFixed(2)}</div></div></div></div></div>`;
   });
   return html;
 }
 
-function renderHow(){
-  return`<div class="how"><div class="how-title">HOW GAMBLESAUR WORKS</div><div class="how-text">
-    <p><strong style="color:var(--blue)">ML Velocity</strong> — How fast the moneyline's implied probability is shifting. Catches momentum before odds fully adjust. A +3% velocity means the line moved 3 percentage points in the last few ticks.</p>
-    <p><strong style="color:#c084fc">Acceleration</strong> — Is the velocity increasing or fading? Positive = momentum building, the move is getting stronger. Negative = reversal incoming, the move is losing steam.</p>
-    <p><strong style="color:var(--orange)">Spread Velocity</strong> — Independent spread movement tracked alongside the moneyline. When ML and spread diverge (one moves but the other doesn't follow), that gap is where the edge lives.</p>
-    <p><strong style="color:var(--green)">BUY Signal</strong> — Fires when velocity exceeds threshold with sustained or increasing acceleration. The market hasn't caught up yet — potential value before it does.</p>
-    <p><strong style="color:var(--red)">FADE Signal</strong> — Fires when a sharp move starts decelerating. The market may be overreacting. Consider the opposite side.</p>
-    <p><strong style="color:var(--amber)">Volume Split</strong> — Shows where the money is flowing between sides. Combined with velocity, reveals whether sharp money or public money is driving the move.</p>
-    <p><strong style="color:var(--muted)">Edge %</strong> — Estimated edge based on velocity magnitude and acceleration. Higher edge = stronger signal. Ranked in the Top Plays view.</p>
+function renderHow() {
+  return `<div class="how"><div class="how-title">HOW GAMBLESAUR WORKS</div><div class="how-text">
+    <p><strong style="color:var(--blue)">Real Scores</strong> — Game scores, periods, and clocks are pulled live from ESPN every 30 seconds. No fake data.</p>
+    <p><strong style="color:var(--blue)">ML Velocity</strong> — How fast the moneyline's implied probability is shifting. Catches momentum before odds fully adjust.</p>
+    <p><strong style="color:var(--purple)">Acceleration</strong> — Is the velocity increasing or fading? Positive = momentum building. Negative = reversal incoming.</p>
+    <p><strong style="color:var(--orange)">Spread Velocity</strong> — Independent spread movement. When ML and spread diverge, that's where the edge lives.</p>
+    <p><strong style="color:var(--green)">BUY Signal</strong> — Velocity exceeds threshold with sustained acceleration. The market hasn't caught up yet.</p>
+    <p><strong style="color:var(--red)">FADE Signal</strong> — Sharp move decelerating. Possible overreaction — consider the opposite side.</p>
+    <p><strong style="color:var(--amber)">Volume Split</strong> — Where money is flowing. Combined with velocity, reveals sharp vs public money.</p>
+  </div></div>
+  <div class="how" style="margin-top:10px"><div class="how-title">DATA SOURCES</div><div class="how-text">
+    <p><strong style="color:var(--muted)">Scores</strong> — Live from ESPN's public API. NBA, MLB, NFL, NHL, WNBA, MLS. Updated every 30 seconds.</p>
+    <p><strong style="color:var(--muted)">Odds</strong> — Implied probabilities derived from score differential and game time. For real sportsbook odds, connect The Odds API (free tier available).</p>
+    <p><strong style="color:var(--muted)">Velocity</strong> — Calculated client-side from probability shifts every 2 seconds. Signals only fire during live games.</p>
   </div></div>
   <div class="how" style="margin-top:10px"><div class="how-title">READING THE CARDS</div><div class="how-text">
-    <p>Each card shows the live score, moneyline odds with sparkline history, velocity bars, spread with its own velocity, and the volume split between sides.</p>
-    <p><strong>Tap any card</strong> to expand it and see the full analysis: ML velocity, acceleration, spread velocity, and a written explanation of the signal.</p>
-    <p><strong>Green left border</strong> = active BUY signal. <strong>Red left border</strong> = FADE signal. Gray = no signal (HOLD).</p>
-    <p>The team name turns <strong style="color:var(--green)">green</strong> when it's the signal side of a BUY.</p>
+    <p><strong>Tap any card</strong> to expand for full analysis. <strong style="color:var(--green)">Green border</strong> = BUY. <strong style="color:var(--red)">Red</strong> = FADE. Gray = HOLD.</p>
+    <p>Upcoming games show pre-game lines. Signals activate once the game goes live.</p>
   </div></div>
-  <div class="footer">Simulated data for demonstration · Not financial advice</div>`;
+  <div class="footer">Real scores via ESPN · Not financial advice</div>`;
 }
 
-// ─── Init ───
-render();
-setInterval(tick,2200);
+// ═══════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════
+initFromAPI();
+setInterval(tick, 2200);
+setInterval(refreshScores, 30000); // refresh real scores every 30s
 </script>
 </body>
 </html>
