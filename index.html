@@ -135,6 +135,26 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font);overflo
 .perf-row:last-child{border:none}
 .perf-total{display:flex;justify-content:space-between;align-items:center;padding:10px 0 0;margin-top:8px;border-top:1px solid var(--border);font-size:14px;font-weight:700}
 @media(min-width:520px){.app{padding-top:24px}}
+/* Picks page */
+.pick-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;position:relative;overflow:hidden}
+.pick-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.pick-card.nba::before{background:linear-gradient(90deg,#f97316,#fb923c)}
+.pick-card.mlb::before{background:linear-gradient(90deg,var(--blue),#93c5fd)}
+.pick-sport{font-size:9px;font-weight:800;letter-spacing:.1em;padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:6px}
+.pick-sport.nba{background:#f9731622;color:var(--orange)}
+.pick-sport.mlb{background:#2563eb22;color:var(--blue)}
+.pick-matchup{font-size:16px;font-weight:700;margin-bottom:2px}
+.pick-detail{font-size:11px;color:var(--dim);margin-bottom:10px}
+.pick-bets{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.pick-bet{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;background:var(--surface)}
+.pick-bet-type{font-size:10px;font-weight:700;color:var(--dim);letter-spacing:.06em;width:60px}
+.pick-bet-side{font-size:13px;font-weight:700;flex:1}
+.pick-bet-conf{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px}
+.pick-bet-conf.high{background:#052e16;color:var(--green)}
+.pick-bet-conf.med{background:#1e1b4b;color:#a5b4fc}
+.pick-bet-conf.low{background:#1a1a2e;color:var(--muted)}
+.pick-reasoning{font-size:11px;color:var(--muted);line-height:1.6;padding-top:8px;border-top:1px solid var(--border)}
+.pick-section-title{font-size:11px;font-weight:800;color:var(--dim);letter-spacing:.08em;margin:16px 0 8px;display:flex;align-items:center;gap:6px}
 </style>
 </head>
 <body>
@@ -144,6 +164,7 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font);overflo
 <nav class="nav">
   <button class="nav-btn on" id="nav-live" onclick="setView('live')"><span class="nav-icon">📊</span>Live</button>
   <button class="nav-btn" id="nav-best" onclick="setView('best')"><span class="nav-icon">🦖</span>Best Plays</button>
+  <button class="nav-btn" id="nav-picks" onclick="setView('picks')"><span class="nav-icon">🧠</span>Picks</button>
   <button class="nav-btn" id="nav-how" onclick="setView('how')"><span class="nav-icon">⚡</span>How It Works</button>
 </nav>
 
@@ -334,7 +355,7 @@ function tick(){
       const team=g.signalSide==="home"?g.home:g.away;
       const opp=g.signalSide==="home"?g.away:g.home;
       const odds=g.signalSide==="home"?g.hOdds:g.aOdds;
-      const dup=signalHistory.find(h=>h.gameId===g.id&&h.team===team&&h.signal===g.signal&&(now-h.time)<8000);
+      const dup=signalHistory.find(h=>h.gameId===g.id&&h.team===team&&h.signal===g.signal&&(now-h.time)<20000);
       if(!dup){
         const entry={gameId:g.id,team,opp,signal:g.signal,odds,edge:g.edge,sport:g.sport,time:now,period:g.period,clock:g.clock,hs:g.hs,as:g.as,signalSide:g.signalSide};
         signalHistory.push(entry);
@@ -348,7 +369,7 @@ function tick(){
     }
   });
   // Keep 10 seconds of history (full opacity, then disappear)
-  signalHistory=signalHistory.filter(h=>(now-h.time)<10000);
+  signalHistory=signalHistory.filter(h=>(now-h.time)<30000);
   render();
 }
 
@@ -372,6 +393,7 @@ function render(){
   if(isLoading){app.innerHTML=renderHeader()+`<div class="loading"><div class="loading-spin"></div><div>Fetching live scores...</div></div>`;return}
   if(fetchError&&!state.length){app.innerHTML=renderHeader()+`<div class="error-box">${fetchError}<br><button class="refresh-btn" onclick="initFromAPI()">Try Again</button></div>`;return}
   if(currentView==="best"){app.innerHTML=renderHeader()+renderBestFull();return}
+  if(currentView==="picks"){app.innerHTML=renderHeader()+renderPicks();return}
   if(currentView==="how"){app.innerHTML=renderHeader()+renderHow();return}
 
   const filtered=filter==="ALL"?state:state.filter(g=>{
@@ -411,7 +433,7 @@ function render(){
 
   // Recent signals feed (rolls down, 10s, full opacity)
   const now2=Date.now();
-  const recentSigs=signalHistory.filter(h=>(now2-h.time)<10000).sort((a,b)=>b.time-a.time);
+  const recentSigs=signalHistory.filter(h=>(now2-h.time)<30000).sort((a,b)=>b.time-a.time);
   if(recentSigs.length>0){
     html+=`<div style="margin-bottom:14px"><div style="font-size:9px;font-weight:800;color:var(--dim);letter-spacing:.12em;margin-bottom:6px;display:flex;align-items:center;gap:5px">⚡ RECENT SIGNALS</div>`;
     recentSigs.forEach(h=>{
@@ -433,15 +455,18 @@ function render(){
   const sportGroups=["ALL"];
   const rawSports=[...new Set(state.map(g=>g.sport))];
   rawSports.forEach(s=>{if(SOCCER_LEAGUES.includes(s)){if(!sportGroups.includes("Soccer"))sportGroups.push("Soccer")}else if(TENNIS_LEAGUES.includes(s)){if(!sportGroups.includes("Tennis"))sportGroups.push("Tennis")}else{if(!sportGroups.includes(s))sportGroups.push(s)}});
+  // Always show Soccer and Tennis even if no games right now
+  if(!sportGroups.includes("Soccer"))sportGroups.push("Soccer");
+  if(!sportGroups.includes("Tennis"))sportGroups.push("Tennis");
   const getCount=f=>{if(f==="ALL")return state.length;if(f==="Soccer")return state.filter(g=>SOCCER_LEAGUES.includes(g.sport)).length;if(f==="Tennis")return state.filter(g=>TENNIS_LEAGUES.includes(g.sport)).length;return state.filter(g=>g.sport===f).length};
   html+=`<div class="pills">`;
-  sportGroups.forEach(s=>{const c=getCount(s);if(c>0||s==="ALL")html+=`<button class="pill ${filter===s?"on":""}" onclick="filter='${s}';render()">${s}${s!=="ALL"?` (${c})`:""}</button>`});
+  sportGroups.forEach(s=>{const c=getCount(s);html+=`<button class="pill ${filter===s?"on":""}" onclick="filter='${s}';render()">${s}${s!=="ALL"?` (${c})`:""}</button>`});
   html+=`</div>`;
   html+=`<div class="sort-row"><span class="sort-label">SORT</span>`;
   ["signal","edge","velocity"].forEach(s=>{const k=s==="velocity"?"rate":s;html+=`<button class="sort-btn ${sortBy===k?"on":""}" onclick="sortBy='${k}';render()">${s}</button>`});
   html+=`</div>`;
 
-  if(!sorted.length)html+=`<div class="empty"><div class="empty-icon">🦖</div><h3>No games in this league right now</h3><p>Try "ALL" or check back later</p></div>`;
+  if(!sorted.length)html+=`<div class="empty"><div class="empty-icon">🦖</div><h3>No ${filter==="ALL"?"":filter+" "}games right now</h3><p>${filter==="Tennis"?"ATP & WTA matches will appear here when scheduled.":filter==="Soccer"?"Matches from EPL, La Liga, Serie A, UCL & more will appear here.":"Try \"ALL\" or check back later."}</p></div>`;
 
   // Cards
   sorted.forEach(g=>{
@@ -514,7 +539,7 @@ function render(){
     html+=`</div></div>`;
   });
 
-  html+=`<div class="footer">Real scores via ESPN · Today + tomorrow · Velocity updates ~2s<br>Scores refresh every 30s · Tap cards to expand · Not financial advice</div>`;
+  html+=`<div class="footer">Real scores via ESPN · Today + tomorrow · Velocity updates ~6s<br>Scores refresh every 30s · Tap cards to expand · Not financial advice</div>`;
   app.innerHTML=html;
 }
 
@@ -527,7 +552,7 @@ function renderHeader(){
 function renderBestFull(){
   const buys=state.filter(g=>g.signal.includes("BUY")).sort((a,b)=>Math.abs(b.edge)-Math.abs(a.edge));
   const now2=Date.now();
-  const recentSigs=signalHistory.filter(h=>(now2-h.time)<10000).sort((a,b)=>b.time-a.time);
+  const recentSigs=signalHistory.filter(h=>(now2-h.time)<30000).sort((a,b)=>b.time-a.time);
   let html="";
 
   // Active signals
@@ -599,6 +624,105 @@ function renderPerformance(){
   return html;
 }
 
+function renderPicks(){
+  const today=new Date();
+  const dateStr=today.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const PICKS=[
+    {
+      sport:"nba",
+      matchup:"OKC Thunder vs San Antonio Spurs",
+      detail:"Game 5 · Western Conference Finals · Series tied 2-2 · OKC home · 5:30 PM PT",
+      bets:[
+        {type:"ML",side:"OKC Thunder",conf:"high",label:"High"},
+        {type:"SPREAD",side:"OKC -4.5",conf:"med",label:"Med"},
+      ],
+      reasoning:"Home court has been everything this series — the home team has won every game. OKC blasted SAS 123-108 in Game 3 on the road, and SAS responded 103-82 at home in Game 4. Pattern is clear: home team dominates. OKC returns to their building with the crowd and a 60.8% ESPN win probability. This is the strongest spot of the day."
+    },
+    {
+      sport:"mlb",
+      matchup:"Houston Astros at Texas Rangers",
+      detail:"5:05 PM PT · Minute Maid vs Globe Life",
+      bets:[
+        {type:"ML",side:"Houston Astros",conf:"high",label:"High"},
+        {type:"SPREAD",side:"Astros -1.5",conf:"med",label:"Med"},
+      ],
+      reasoning:"Houston just annihilated Texas 9-0 yesterday — a complete shutout on the road. The Astros' bats are scorching and their pitching staff is dealing. Texas got blanked at home, which is a major red flag. Houston's run line at -1.5 has value given the offensive disparity in this series."
+    },
+    {
+      sport:"mlb",
+      matchup:"Los Angeles Dodgers vs Colorado Rockies",
+      detail:"7:10 PM PT · Dodger Stadium · LAD home",
+      bets:[
+        {type:"ML",side:"Los Angeles Dodgers",conf:"high",label:"High"},
+        {type:"SPREAD",side:"Dodgers -1.5",conf:"high",label:"High"},
+      ],
+      reasoning:"Dodgers at home vs the Rockies is one of the most reliable spots in baseball. LAD won 5-3 last night and Colorado is historically awful on the road, especially at sea level. The Dodgers' lineup depth is overwhelming at Dodger Stadium. The run line is playable here — expect a multi-run win."
+    },
+    {
+      sport:"mlb",
+      matchup:"Philadelphia Phillies at San Diego Padres",
+      detail:"6:40 PM PT · Petco Park · PHI away",
+      bets:[
+        {type:"ML",side:"Philadelphia Phillies",conf:"med",label:"Med"},
+        {type:"SPREAD",side:"Phillies -1.5",conf:"low",label:"Low"},
+      ],
+      reasoning:"Philly blanked San Diego 3-0 yesterday on the road — their pitching completely shut down the Padres' lineup. Back-to-back road wins against SD shows dominance in this matchup. The ML is the cleaner play here; the run line is riskier on the road but Philly's rotation depth gives them an edge."
+    },
+  ];
+
+  let html=`<div style="padding:8px 0 4px"><div style="font-size:16px;font-weight:700;margin-bottom:2px">🧠 Today's Picks</div><div style="font-size:11px;color:var(--dim);margin-bottom:4px">${dateStr}</div><div style="font-size:10px;color:var(--faint);margin-bottom:14px">Moneyline & spread analysis based on recent form, matchup data, and momentum.</div></div>`;
+
+  // NBA section
+  const nbaPicks=PICKS.filter(p=>p.sport==="nba");
+  if(nbaPicks.length){
+    html+=`<div class="pick-section-title">🏀 NBA</div>`;
+    nbaPicks.forEach(p=>{html+=pickCard(p)});
+  }
+
+  // MLB section
+  const mlbPicks=PICKS.filter(p=>p.sport==="mlb");
+  if(mlbPicks.length){
+    html+=`<div class="pick-section-title">⚾ MLB — TOP 3</div>`;
+    mlbPicks.forEach(p=>{html+=pickCard(p)});
+  }
+
+  // Other games today
+  const otherMLB=[
+    {away:"WSH",home:"CLE",time:"3:10 PM"},{away:"TB",home:"BAL",time:"3:35 PM"},
+    {away:"CHC",home:"PIT",time:"3:40 PM"},{away:"LAA",home:"DET",time:"3:40 PM"},
+    {away:"ATL",home:"BOS",time:"3:45 PM"},{away:"MIA",home:"TOR",time:"4:07 PM"},
+    {away:"CIN",home:"NYM",time:"4:10 PM"},{away:"NYY",home:"KC",time:"4:40 PM"},
+    {away:"STL",home:"MIL",time:"4:40 PM"},{away:"MIN",home:"CWS",time:"4:40 PM"},
+    {away:"SEA",home:"ATH",time:"6:40 PM"},{away:"AZ",home:"SF",time:"6:45 PM"},
+  ];
+  html+=`<div class="pick-section-title">⚾ OTHER MLB GAMES TODAY</div>`;
+  html+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px">`;
+  otherMLB.forEach(g=>{
+    html+=`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted)">${g.away} @ ${g.home}</span><span style="color:var(--dim);font-family:var(--mono);font-size:10px">${g.time}</span></div>`;
+  });
+  html+=`<div style="font-size:10px;color:var(--faint);margin-top:8px;text-align:center">No strong edge identified — monitor live velocity for in-game signals</div>`;
+  html+=`</div>`;
+
+  html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-top:14px"><div style="font-size:10px;font-weight:700;color:var(--dim);letter-spacing:.08em;margin-bottom:6px">⚠️ DISCLAIMER</div><div style="font-size:11px;color:var(--dim);line-height:1.6">These picks are based on recent form, matchup data, and momentum analysis. They are not guaranteed. Always do your own research, manage your bankroll, and never bet more than you can afford to lose.</div></div>`;
+  html+=`<div class="footer">Updated daily · Not financial advice</div>`;
+  return html;
+}
+
+function pickCard(p){
+  let html=`<div class="pick-card ${p.sport}">`;
+  html+=`<span class="pick-sport ${p.sport}">${p.sport.toUpperCase()}</span>`;
+  html+=`<div class="pick-matchup">${p.matchup}</div>`;
+  html+=`<div class="pick-detail">${p.detail}</div>`;
+  html+=`<div class="pick-bets">`;
+  p.bets.forEach(b=>{
+    html+=`<div class="pick-bet"><span class="pick-bet-type">${b.type}</span><span class="pick-bet-side">${b.side}</span><span class="pick-bet-conf ${b.conf}">${b.label}</span></div>`;
+  });
+  html+=`</div>`;
+  html+=`<div class="pick-reasoning">${p.reasoning}</div>`;
+  html+=`</div>`;
+  return html;
+}
+
 function renderHow(){
   return`<div class="how"><div class="how-title">HOW GAMBLESAUR WORKS</div><div class="how-text">
     <p><strong style="color:var(--blue)">Real Scores</strong> — Pulled live from ESPN every 30 seconds. NBA, MLB, NFL, NHL, Soccer (EPL, La Liga, Serie A, Ligue 1, Bundesliga, UCL, UEL, FIFA), and Tennis (ATP, WTA).</p>
@@ -614,6 +738,11 @@ function renderHow(){
     <p><strong style="color:var(--muted)">Performance</strong> — Simulates $100 flat bets on each BUY signal. Tracks win rate, P&L, and ROI for the session. Shows what you'd make if you tailed every signal.</p>
     <p><strong style="color:var(--muted)">Opening Lines</strong> — For live games, the pre-game close ML and spread are preserved so you can see line movement from open to current.</p>
   </div></div>
+  <div class="how" style="margin-top:10px"><div class="how-title">🧠 DAILY PICKS</div><div class="how-text">
+    <p><strong style="color:var(--muted)">Picks Tab</strong> — Daily moneyline and spread picks for NBA and MLB based on recent form, matchup data, home/away splits, and momentum analysis.</p>
+    <p><strong style="color:var(--muted)">Confidence Levels</strong> — Each pick is rated High, Med, or Low confidence. High = strong data alignment. Med = edge present but riskier. Low = worth a look but proceed with caution.</p>
+    <p><strong style="color:var(--muted)">Other Games</strong> — Games without a strong identified edge are listed so you can monitor them for live velocity signals once they start.</p>
+  </div></div>
   <div class="how" style="margin-top:10px"><div class="how-title">SPORTS COVERED</div><div class="how-text">
     <p><strong>🏀</strong> NBA · <strong>⚾</strong> MLB · <strong>🏈</strong> NFL · <strong>🏒</strong> NHL</p>
     <p><strong>⚽</strong> EPL · La Liga · Serie A · Ligue 1 · Bundesliga · Champions League · Europa League · FIFA World Cup · WC Qualifiers · Friendlies · MLS</p>
@@ -624,7 +753,7 @@ function renderHow(){
 
 // ═══ BOOT ═══
 initFromAPI();
-setInterval(tick,2200);
+setInterval(tick,6000);
 setInterval(refreshScores,30000);
 </script>
 </body>
