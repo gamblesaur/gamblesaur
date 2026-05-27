@@ -206,7 +206,84 @@ function getDateStr(d){const o=new Date();o.setDate(o.getDate()+d);return o.getF
 async function fetchAllScores(){
   const results=[],now=new Date(),in24h=new Date(now.getTime()+24*3600000),twoHago=new Date(now.getTime()-2*3600000);
   const todayStr=getDateStr(0),tomorrowStr=getDateStr(1);
-  const fetches=Object.entries(APIS).flatMap(([sport,baseUrl])=>[todayStr,tomorrowStr].map(async dateStr=>{
+  const isTennisSport=s=>TENNIS_LEAGUES.includes(s);
+
+  const fetches=Object.entries(APIS).flatMap(([sport,baseUrl])=>{
+    // Tennis: don't pass dates, just fetch the active scoreboard (returns current tournament)
+    if(isTennisSport(sport)){
+      return [(async()=>{
+        try{
+          const res=await fetch(baseUrl);
+          if(!res.ok)return;
+          const data=await res.json();
+          (data.events||[]).forEach(ev=>{
+            const comp=ev.competitions?.[0];if(!comp)return;
+            const status=comp.status, st=status?.type?.state;
+            const gameTime=ev.date?new Date(ev.date):null;
+            if(st==="post"&&gameTime&&gameTime<twoHago)return;
+            if(results.find(r=>r.id===ev.id))return;
+
+            // Tennis: competitors are [0] and [1], no home/away
+            const c0=comp.competitors?.[0];
+            const c1=comp.competitors?.[1];
+            if(!c0||!c1)return;
+
+            const name0=c0.athlete?.shortName||c0.athlete?.displayName||c0.team?.shortDisplayName||"Player 1";
+            const name1=c1.athlete?.shortName||c1.athlete?.displayName||c1.team?.shortDisplayName||"Player 2";
+            const score0=parseInt(c0.score)||0, score1=parseInt(c1.score)||0;
+            const seed0=c0.curatedRank?.current||"";
+            const seed1=c1.curatedRank?.current||"";
+            const period=status?.period||0, clock=status?.displayClock||"";
+            const isLive=st==="in", isFinal=st==="post";
+            const detail=status?.type?.shortDetail||"";
+            const tournamentName=ev.season?.slug||data.leagues?.[0]?.name||sport;
+
+            // Sets display for tennis
+            let setsDisplay="";
+            if(c0.linescores&&c0.linescores.length>0){
+              setsDisplay=c0.linescores.map((s,i)=>`${s.value||0}-${c1.linescores?.[i]?.value||0}`).join(" · ");
+            }
+
+            let hImpl=50,aImpl=50,hSpread=0;
+            // Use rankings to estimate probability
+            const r0=parseInt(seed0)||200, r1=parseInt(seed1)||200;
+            if(r0!==200||r1!==200){const d=r1-r0;hImpl=Math.max(15,Math.min(85,50+d*0.4));aImpl=100-hImpl}
+            if(isLive&&(score0!==0||score1!==0)){
+              const diff=score0-score1;
+              const dW=5+Math.min(period/3,1)*10;
+              hImpl=Math.max(5,Math.min(95,50+diff*dW));aImpl=100-hImpl;
+            }
+            if(isFinal){hImpl=score0>score1?100:score0<score1?0:50;aImpl=100-hImpl}
+            hSpread=-(hImpl-50)/3;
+
+            let startStr="";
+            if(gameTime){const isToday=gameTime.toDateString()===now.toDateString();const tp=gameTime.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});startStr=isToday?tp:`${gameTime.toLocaleDateString([],{weekday:"short"})} ${tp}`}
+
+            let periodLabel="";
+            if(isLive)periodLabel=setsDisplay||`Set ${period}`;
+            else if(isFinal)periodLabel="Final"+(setsDisplay?" · "+setsDisplay:"");
+
+            results.push({
+              id:ev.id,sport,
+              home:name0+(seed0&&seed0<50?` (${seed0})`:""),
+              away:name1+(seed1&&seed1<50?` (${seed1})`:""),
+              homeAbbr:"",awayAbbr:"",
+              hs:score0,as:score1,
+              period:isLive?periodLabel:isFinal?"Final":"Scheduled",
+              clock:isLive?(clock==="0:00"?detail:clock):startStr,
+              isLive,isFinal,hSpread,hImpl,aImpl,
+              hOdds:toAm(hImpl),aOdds:toAm(aImpl),
+              series:tournamentName.replace(/-/g," ").replace(/\b\w/g,l=>l.toUpperCase()),
+              detail,gameTime,
+              openHImpl:hImpl,openAImpl:aImpl,openHSpread:hSpread,
+              openHOdds:toAm(hImpl),openAOdds:toAm(aImpl),
+            });
+          });
+        }catch(e){console.warn(`Fetch ${sport}:`,e)}
+      })()];
+    }
+    // Team sports: fetch with dates
+    return [todayStr,tomorrowStr].map(dateStr=>(async()=>{
     try{
       const res=await fetch(`${baseUrl}?dates=${dateStr}`);
       if(!res.ok)return;
@@ -291,7 +368,8 @@ async function fetchAllScores(){
         });
       });
     }catch(e){console.warn(`Fetch ${sport} ${dateStr}:`,e)}
-  }));
+  })());
+});
   await Promise.all(fetches);
   results.sort((a,b)=>{if(a.isLive&&!b.isLive)return-1;if(!a.isLive&&b.isLive)return 1;if(!a.isFinal&&b.isFinal)return-1;if(a.isFinal&&!b.isFinal)return 1;if(a.gameTime&&b.gameTime)return a.gameTime-b.gameTime;return 0});
   return results;
