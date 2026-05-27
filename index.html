@@ -214,8 +214,17 @@ async function fetchAllScores(){
       return [(async()=>{
         try{
           const res=await fetch(baseUrl);
-          if(!res.ok)return;
+          if(!res.ok){console.warn(`${sport} returned ${res.status}`);return}
           const data=await res.json();
+          console.log(`${sport}: ${(data.events||[]).length} events from ${data.leagues?.[0]?.name||'unknown league'}`);
+          if(!data.events||data.events.length===0){
+            // Try alternate endpoint as fallback
+            const altUrl=baseUrl.replace('site.api.espn.com','site.web.api.espn.com');
+            try{
+              const altRes=await fetch(altUrl);
+              if(altRes.ok){const altData=await altRes.json();if(altData.events?.length){data.events=altData.events;console.log(`${sport}: ${altData.events.length} events from alt endpoint`)}}
+            }catch(e2){}
+          }
           (data.events||[]).forEach(ev=>{
             const comp=ev.competitions?.[0];if(!comp)return;
             const status=comp.status, st=status?.type?.state;
@@ -228,20 +237,44 @@ async function fetchAllScores(){
             const c1=comp.competitors?.[1];
             if(!c0||!c1)return;
 
-            const name0=c0.athlete?.shortName||c0.athlete?.displayName||c0.team?.shortDisplayName||"Player 1";
-            const name1=c1.athlete?.shortName||c1.athlete?.displayName||c1.team?.shortDisplayName||"Player 2";
+            // Robust name extraction - try every possible path
+            const tName=c=>{
+              if(c.athlete?.shortName)return c.athlete.shortName;
+              if(c.athlete?.displayName)return c.athlete.displayName;
+              if(c.athlete?.fullName)return c.athlete.fullName;
+              if(c.team?.shortDisplayName)return c.team.shortDisplayName;
+              if(c.team?.displayName)return c.team.displayName;
+              if(c.team?.name)return c.team.name;
+              if(c.displayName)return c.displayName;
+              if(c.name)return c.name;
+              return null;
+            };
+            let name0=tName(c0), name1=tName(c1);
+            // Fallback: parse from event name "Player1 vs Player2" or "Player1 vs. Player2"
+            if((!name0||!name1)&&(ev.name||ev.shortName)){
+              const src=ev.shortName||ev.name||"";
+              const parts=src.split(/ vs\.? | @ /i);
+              if(parts.length>=2){name0=name0||parts[0].trim();name1=name1||parts[1].trim()}
+            }
+            if(!name0)name0="TBD";
+            if(!name1)name1="TBD";
             const score0=parseInt(c0.score)||0, score1=parseInt(c1.score)||0;
-            const seed0=c0.curatedRank?.current||"";
-            const seed1=c1.curatedRank?.current||"";
+            const seed0=c0.curatedRank?.current||c0.seed||"";
+            const seed1=c1.curatedRank?.current||c1.seed||"";
             const period=status?.period||0, clock=status?.displayClock||"";
             const isLive=st==="in", isFinal=st==="post";
-            const detail=status?.type?.shortDetail||"";
-            const tournamentName=ev.season?.slug||data.leagues?.[0]?.name||sport;
+            const detail=status?.type?.shortDetail||status?.type?.detail||"";
+            const tournamentName=data.leagues?.[0]?.name||ev.season?.slug?.replace(/-/g," ")||sport;
 
             // Sets display for tennis
             let setsDisplay="";
-            if(c0.linescores&&c0.linescores.length>0){
-              setsDisplay=c0.linescores.map((s,i)=>`${s.value||0}-${c1.linescores?.[i]?.value||0}`).join(" · ");
+            const ls0=c0.linescores||[], ls1=c1.linescores||[];
+            if(ls0.length>0){
+              setsDisplay=ls0.map((s,i)=>{
+                const v0=s.value??s.displayValue??"";
+                const v1=ls1[i]?.value??ls1[i]?.displayValue??"";
+                return`${v0}-${v1}`;
+              }).join(" · ");
             }
 
             let hImpl=50,aImpl=50,hSpread=0;
