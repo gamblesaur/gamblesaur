@@ -349,17 +349,53 @@ async function fetchAllScores(){
         const series=ev.competitions?.[0]?.series?.summary||"";
         const headline=ev.competitions?.[0]?.notes?.[0]?.headline||"";
 
-        let hSpread=0, hImpl=50, aImpl=50;
+        let hSpread=0, hImpl=50, aImpl=50, hML=0, aML=0, hasRealOdds=false;
         const odds=comp.odds?.[0];
         if(odds){
+          // Spread
           hSpread=parseFloat(odds.spread)||0;
-          if(odds.homeTeamOdds?.winPercentage){hImpl=parseFloat(odds.homeTeamOdds.winPercentage)*100;aImpl=100-hImpl}
-          else if(odds.details){const sp=Math.abs(hSpread);hImpl=hSpread<0?50+sp*2.8:50-sp*2.8;hImpl=Math.max(8,Math.min(92,hImpl));aImpl=100-hImpl}
+          // Try to get actual moneylines from ESPN
+          const hto=odds.homeTeamOdds||{};
+          const ato=odds.awayTeamOdds||{};
+          if(hto.moneyLine&&ato.moneyLine){
+            hML=parseInt(hto.moneyLine);aML=parseInt(ato.moneyLine);hasRealOdds=true;
+            // Derive implied probability from real ML
+            hImpl=hML<0?(-hML)/(-hML+100)*100:100/(hML+100)*100;
+            aImpl=aML<0?(-aML)/(-aML+100)*100:100/(aML+100)*100;
+          } else if(hto.winPercentage){
+            hImpl=parseFloat(hto.winPercentage)*100;aImpl=100-hImpl;
+            hML=toAm(hImpl);aML=toAm(aImpl);hasRealOdds=true;
+          } else if(odds.details){
+            // Parse "TEAM -6.5" format to get spread
+            const m=odds.details.match(/([\w]+)\s+([+-]?\d+\.?\d*)/);
+            if(m){
+              const sp=Math.abs(parseFloat(m[2]));
+              hSpread=parseFloat(m[2]);
+              // Check if the team in details is home or away
+              if(m[1]===awayTeam?.team?.abbreviation)hSpread=-hSpread;
+              hImpl=hSpread<0?50+Math.abs(hSpread)*2.8:50-Math.abs(hSpread)*2.8;
+              hImpl=Math.max(8,Math.min(92,hImpl));aImpl=100-hImpl;
+              hML=toAm(hImpl);aML=toAm(aImpl);hasRealOdds=true;
+            }
+          }
+          // Also try spreadOdds
+          if(hto.spreadOdds&&!hSpread){hSpread=parseFloat(hto.spreadOdds)||0}
+          // overUnder
+          if(odds.overUnder){}// store if needed
+        }
+        // If no real odds from ESPN, estimate from rankings/home advantage
+        if(!hasRealOdds){
+          const hRank=parseInt(homeTeam.curatedRank?.current)||99;
+          const aRank=parseInt(awayTeam.curatedRank?.current)||99;
+          if(hRank<99||aRank<99){hImpl=Math.max(25,Math.min(75,50+(aRank-hRank)*1.5));aImpl=100-hImpl}
+          else{hImpl=55;aImpl=45} // slight home advantage
+          hSpread=-(hImpl-50)/2.5;
+          hML=toAm(hImpl);aML=toAm(aImpl);
         }
 
-        // Store opening lines before live adjustments
-        let openHImpl=hImpl, openAImpl=aImpl, openHSpread=hSpread;
-        let openHOdds=toAm(hImpl), openAOdds=toAm(aImpl);
+        // Store opening lines BEFORE live score adjustments
+        const openHImpl=hImpl, openAImpl=aImpl, openHSpread=hSpread;
+        const openHOdds=hML||toAm(hImpl), openAOdds=aML||toAm(aImpl);
 
         const isSoccer=SOCCER_LEAGUES.includes(sport);
         const isTennis=TENNIS_LEAGUES.includes(sport);
@@ -375,13 +411,6 @@ async function fetchAllScores(){
           hSpread=-diff+(Math.random()-.5)*(isSoccer?.5:2);
         }
         if(isFinal){hImpl=hs>as?100:hs<as?0:50;aImpl=100-hImpl;hSpread=-(hs-as)}
-        if(!isLive&&!isFinal&&hImpl===50&&aImpl===50){
-          const hR=parseInt(homeTeam.curatedRank?.current)||99, aR=parseInt(awayTeam.curatedRank?.current)||99;
-          if(hR<99||aR<99){hImpl=Math.max(30,Math.min(70,50+(aR-hR)*1.5));aImpl=100-hImpl}
-          else{hImpl=54;aImpl=46}
-          hSpread=-(hImpl-50)/2.8;
-          openHImpl=hImpl;openAImpl=aImpl;openHSpread=hSpread;openHOdds=toAm(hImpl);openAOdds=toAm(aImpl);
-        }
 
         let startStr="";
         if(gameTime){const isToday=gameTime.toDateString()===now.toDateString();const tp=gameTime.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});startStr=isToday?tp:`${gameTime.toLocaleDateString([],{weekday:"short"})} ${tp}`}
@@ -658,7 +687,7 @@ function render(){
     html+=`</div></div>`;
   });
 
-  html+=`<div class="footer">Real scores via ESPN · Today + tomorrow · Velocity updates ~6s<br>Scores refresh every 30s · Tap cards to expand · Not financial advice</div>`;
+  html+=`<div class="footer">Real scores via ESPN · Today + tomorrow · Velocity: 8s normal / 3s clutch time<br>Scores refresh every 30s · Tap cards to expand · Not financial advice</div>`;
   app.innerHTML=html;
 }
 
@@ -748,13 +777,13 @@ function renderPicks(){
   const dateStr=today.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'});
 
   // Auto-generate picks from the live state data
-  // Score games by: implied probability edge, home advantage, favorite strength
+  // Score games by: implied probability strength — higher = better pick
   function scorePick(g){
     if(g.isFinal)return-999;
     const edge=Math.abs(g.hImpl-50);
-    const isFav=edge>8;
+    if(edge<8)return-1; // Skip near-coinflip games — no edge
     const homeAdv=!TENNIS_LEAGUES.includes(g.sport)?3:0;
-    return edge+(isFav?5:0)+homeAdv+(g.isLive?10:0);
+    return edge+homeAdv+(g.isLive?10:0);
   }
 
   function genPick(g){
@@ -765,10 +794,11 @@ function renderPicks(){
     const favImpl=favHome?g.hImpl:g.aImpl;
     const spread=favHome?g.hSpread:(-g.hSpread);
     const confScore=Math.abs(favImpl-50);
-    const conf=confScore>20?"high":confScore>10?"med":"low";
-    const confLabel=conf==="high"?"High":conf==="med"?"Med":"Low";
-    const spreadConf=confScore>18?"high":confScore>8?"med":"low";
-    const spreadLabel=spreadConf==="high"?"High":spreadConf==="med"?"Med":"Low";
+    // Only high and med — low gets filtered out
+    const conf=confScore>20?"high":"med";
+    const confLabel=conf==="high"?"High":"Med";
+    const spreadConf=confScore>18?"high":"med";
+    const spreadLabel=spreadConf==="high"?"High":"Med";
 
     const isSoccer=SOCCER_LEAGUES.includes(g.sport);
     const isTennis=TENNIS_LEAGUES.includes(g.sport);
@@ -804,14 +834,16 @@ function renderPicks(){
     };
   }
 
-  // Group upcoming/live games by sport category
+  // Group upcoming/live games by sport, filter to only games with edge
   const upcoming=state.filter(g=>!g.isFinal);
-  const nbag=upcoming.filter(g=>g.sport==="NBA").sort((a,b)=>scorePick(b)-scorePick(a));
-  const mlbg=upcoming.filter(g=>g.sport==="MLB").sort((a,b)=>scorePick(b)-scorePick(a));
-  const nhlg=upcoming.filter(g=>g.sport==="NHL").sort((a,b)=>scorePick(b)-scorePick(a));
-  const nflg=upcoming.filter(g=>g.sport==="NFL").sort((a,b)=>scorePick(b)-scorePick(a));
-  const soccerg=upcoming.filter(g=>SOCCER_LEAGUES.includes(g.sport)).sort((a,b)=>scorePick(b)-scorePick(a));
-  const tennisg=upcoming.filter(g=>TENNIS_LEAGUES.includes(g.sport)).sort((a,b)=>scorePick(b)-scorePick(a));
+  const nbag=upcoming.filter(g=>g.sport==="NBA"&&scorePick(g)>0).sort((a,b)=>scorePick(b)-scorePick(a));
+  const mlbg=upcoming.filter(g=>g.sport==="MLB");
+  const mlbPicks=mlbg.filter(g=>scorePick(g)>0).sort((a,b)=>scorePick(b)-scorePick(a));
+  const mlbRest=mlbg.filter(g=>scorePick(g)<=0);
+  const nhlg=upcoming.filter(g=>g.sport==="NHL"&&scorePick(g)>0).sort((a,b)=>scorePick(b)-scorePick(a));
+  const nflg=upcoming.filter(g=>g.sport==="NFL"&&scorePick(g)>0).sort((a,b)=>scorePick(b)-scorePick(a));
+  const soccerg=upcoming.filter(g=>SOCCER_LEAGUES.includes(g.sport)&&scorePick(g)>0).sort((a,b)=>scorePick(b)-scorePick(a));
+  const tennisg=upcoming.filter(g=>TENNIS_LEAGUES.includes(g.sport)&&scorePick(g)>0).sort((a,b)=>scorePick(b)-scorePick(a));
 
   let html=`<div style="padding:8px 0 4px"><div style="font-size:16px;font-weight:700;margin-bottom:2px">🧠 Today's Picks</div><div style="font-size:11px;color:var(--dim);margin-bottom:4px">${dateStr}</div><div style="font-size:10px;color:var(--faint);margin-bottom:14px">Auto-generated from live ESPN data. ML & spread picks ranked by implied edge.</div></div>`;
 
@@ -828,16 +860,17 @@ function renderPicks(){
   }
 
   // MLB
-  if(mlbg.length){
+  if(mlbPicks.length||mlbRest.length){
     hasPicks=true;
-    const topMLB=mlbg.slice(0,3);
-    const restMLB=mlbg.slice(3);
-    html+=`<div class="pick-section-title">⚾ MLB — TOP ${Math.min(3,mlbg.length)}</div>`;
-    topMLB.forEach(g=>{html+=pickCard(genPick(g))});
-    if(restMLB.length){
+    if(mlbPicks.length){
+      html+=`<div class="pick-section-title">⚾ MLB — TOP ${Math.min(3,mlbPicks.length)} PICKS</div>`;
+      mlbPicks.slice(0,3).forEach(g=>{html+=pickCard(genPick(g))});
+    }
+    const otherMLB=[...mlbPicks.slice(3),...mlbRest];
+    if(otherMLB.length){
       html+=`<div class="pick-section-title">⚾ OTHER MLB GAMES</div>`;
       html+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px">`;
-      restMLB.forEach(g=>{
+      otherMLB.forEach(g=>{
         html+=`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted)">${g.away} @ ${g.home}</span><span style="color:var(--dim);font-family:var(--mono);font-size:10px">${g.clock||""}</span></div>`;
       });
       html+=`<div style="font-size:10px;color:var(--faint);margin-top:8px;text-align:center">Monitor live velocity for in-game signals</div></div>`;
@@ -927,7 +960,28 @@ function renderHow(){
 
 // ═══ BOOT ═══
 initFromAPI();
-setInterval(tick,6000);
+// Adaptive tick - slow normally (8s), fast in last 10% of any live game (3s)
+let tickInterval=null;
+function startTicker(){
+  if(tickInterval)clearInterval(tickInterval);
+  const hasClutch=state.some(g=>{
+    if(!g.isLive)return false;
+    const isSoccer=SOCCER_LEAGUES.includes(g.sport);
+    const isTennis=TENNIS_LEAGUES.includes(g.sport);
+    const period=parseInt(g.period?.replace(/\D/g,''))||0;
+    const clock=parseInt(g.clock)||0;
+    if(g.sport==="NBA"&&period>=4&&clock<=4)return true;
+    if(g.sport==="NFL"&&period>=4&&clock<=4)return true;
+    if(g.sport==="NHL"&&period>=3&&clock<=5)return true;
+    if(g.sport==="MLB"&&period>=8)return true;
+    if(isSoccer&&period>=2&&clock<=10)return true;
+    if(isTennis&&period>=3)return true;
+    return false;
+  });
+  const speed=hasClutch?3000:8000;
+  tickInterval=setInterval(()=>{tick();startTicker()},speed);
+}
+startTicker();
 setInterval(refreshScores,30000);
 </script>
 </body>
