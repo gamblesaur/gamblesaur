@@ -163,6 +163,16 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font);overflo
 .pick-bet-conf.low{background:#1a1a2e;color:var(--muted)}
 .pick-reasoning{font-size:11px;color:var(--muted);line-height:1.6;padding-top:8px;border-top:1px solid var(--border)}
 .pick-section-title{font-size:11px;font-weight:800;color:var(--dim);letter-spacing:.08em;margin:16px 0 8px;display:flex;align-items:center;gap:6px}
+/* Bet action box */
+.bet-action{border-radius:8px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.bet-action.buy{background:linear-gradient(135deg,#052e16,#0a2618);border:1px solid #22c55e33}
+.bet-action.fade{background:linear-gradient(135deg,#2a0f15,#1f0a10);border:1px solid #ef444433}
+.bet-action.lean{background:var(--surface);border:1px solid var(--border)}
+.bet-action-icon{font-size:20px;flex-shrink:0}
+.bet-action-text{flex:1}
+.bet-action-label{font-size:9px;font-weight:800;letter-spacing:.1em;margin-bottom:2px}
+.bet-action-pick{font-size:14px;font-weight:700}
+.bet-action-odds{font-family:var(--mono);font-size:13px;font-weight:700;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -201,8 +211,109 @@ const TENNIS_LEAGUES=["ATP","WTA"];
 
 let state=[], filter="ALL", sortBy="signal", expanded=null, currentView="live";
 let lastFetch=null, fetchError=null, isLoading=true;
-let signalHistory=[]; // rolls down, stays 10s
-let perfLog=[]; // { team, odds, signal, time, result, payout }
+let signalHistory=[];
+let perfLog=[];
+let oddsCache={}; // keyed by normalized team name
+let heldPicks=JSON.parse(localStorage.getItem('gamblesaur_held')||'[]');
+
+// ═══ THE ODDS API (DraftKings + FanDuel) ═══
+const ODDS_KEY='f051fdbdcb9a0d4e6e90165aac9e7c1a';
+const ODDS_SPORTS={
+  NBA:'basketball_nba',MLB:'baseball_mlb',NFL:'americanfootball_nfl',
+  NHL:'icehockey_nhl',MLS:'soccer_usa_mls',EPL:'soccer_epl',
+  'La Liga':'soccer_spain_la_liga','Serie A':'soccer_italy_serie_a',
+  'Ligue 1':'soccer_france_ligue_one',Bundesliga:'soccer_germany_bundesliga',
+  UCL:'soccer_uefa_champions_league',UEL:'soccer_uefa_europa_league',
+};
+
+async function fetchOddsAPI(){
+  const allOdds={};
+  const sportKeys=[...new Set(Object.values(ODDS_SPORTS))];
+  const fetches=sportKeys.map(async sk=>{
+    try{
+      const url=`https://api.the-odds-api.com/v4/sports/${sk}/odds/?apiKey=${ODDS_KEY}&regions=us&markets=h2h,spreads&bookmakers=draftkings,fanduel&oddsFormat=american`;
+      const res=await fetch(url);
+      if(!res.ok){console.warn(`Odds API ${sk}: ${res.status}`);return}
+      const data=await res.json();
+      console.log(`Odds API: ${data.length} events for ${sk}`);
+      data.forEach(ev=>{
+        const dk=ev.bookmakers?.find(b=>b.key==='draftkings');
+        const fd=ev.bookmakers?.find(b=>b.key==='fanduel');
+        const book=dk||fd;if(!book)return;
+        const h2h=book.markets?.find(m=>m.key==='h2h');
+        const spreads=book.markets?.find(m=>m.key==='spreads');
+        const fdH2h=fd?.markets?.find(m=>m.key==='h2h');
+        const fdSpreads=fd?.markets?.find(m=>m.key==='spreads');
+
+        // Normalize team names for matching
+        const home=ev.home_team, away=ev.away_team;
+        const key=normalizeTeam(home)+'_'+normalizeTeam(away);
+
+        const entry={home,away,commence:ev.commence_time};
+        // DraftKings ML
+        if(h2h?.outcomes){
+          const ho=h2h.outcomes.find(o=>o.name===home);
+          const ao=h2h.outcomes.find(o=>o.name===away);
+          if(ho)entry.dkHomeML=ho.price;
+          if(ao)entry.dkAwayML=ao.price;
+        }
+        // DraftKings Spread
+        if(spreads?.outcomes){
+          const ho=spreads.outcomes.find(o=>o.name===home);
+          const ao=spreads.outcomes.find(o=>o.name===away);
+          if(ho){entry.dkHomeSpread=ho.point;entry.dkHomeSpreadOdds=ho.price}
+          if(ao){entry.dkAwaySpread=ao.point;entry.dkAwaySpreadOdds=ao.price}
+        }
+        // FanDuel ML
+        if(fdH2h?.outcomes){
+          const ho=fdH2h.outcomes.find(o=>o.name===home);
+          const ao=fdH2h.outcomes.find(o=>o.name===away);
+          if(ho)entry.fdHomeML=ho.price;
+          if(ao)entry.fdAwayML=ao.price;
+        }
+        // FanDuel Spread
+        if(fdSpreads?.outcomes){
+          const ho=fdSpreads.outcomes.find(o=>o.name===home);
+          if(ho){entry.fdHomeSpread=ho.point;entry.fdHomeSpreadOdds=ho.price}
+        }
+        allOdds[key]=entry;
+        // Also store by reverse key
+        allOdds[normalizeTeam(away)+'_'+normalizeTeam(home)]=entry;
+      });
+    }catch(e){console.warn(`Odds API ${sk}:`,e)}
+  });
+  await Promise.all(fetches);
+  oddsCache=allOdds;
+  console.log(`Odds cache: ${Object.keys(allOdds).length} games`);
+  return allOdds;
+}
+
+function normalizeTeam(name){
+  return(name||'').toLowerCase().replace(/[^a-z]/g,'').replace(/(city|town|united|fc|sc)$/,'');
+}
+
+function matchOdds(home,away){
+  const k1=normalizeTeam(home)+'_'+normalizeTeam(away);
+  const k2=normalizeTeam(away)+'_'+normalizeTeam(home);
+  // Try exact match first
+  if(oddsCache[k1])return oddsCache[k1];
+  if(oddsCache[k2])return oddsCache[k2];
+  // Fuzzy: check if any cached key contains parts of both names
+  const hParts=normalizeTeam(home), aParts=normalizeTeam(away);
+  for(const[k,v] of Object.entries(oddsCache)){
+    const nk=k.toLowerCase();
+    if(nk.includes(hParts.slice(0,5))&&nk.includes(aParts.slice(0,5)))return v;
+    // Also try matching the odds API team names against ESPN names
+    const oh=normalizeTeam(v.home), oa=normalizeTeam(v.away);
+    if((oh.includes(hParts.slice(0,5))||hParts.includes(oh.slice(0,5)))&&
+       (oa.includes(aParts.slice(0,5))||aParts.includes(oa.slice(0,5))))return v;
+  }
+  return null;
+}
+
+function saveHeld(){localStorage.setItem('gamblesaur_held',JSON.stringify(heldPicks))}
+function holdPick(pick){heldPicks.push({...pick,heldAt:Date.now()});saveHeld();render()}
+function removeHeld(idx){heldPicks.splice(idx,1);saveHeld();render()}
 
 // ═══ HELPERS ═══
 const toAm=p=>{const c=Math.max(.06,Math.min(.94,p/100));return c>=.5?Math.round(-100*c/(1-c)):Math.round(100*(1-c)/c)};
@@ -449,9 +560,32 @@ async function fetchAllScores(){
 async function initFromAPI(){
   isLoading=true;render();
   try{
-    const games=await fetchAllScores();
+    // Fetch ESPN scores and Odds API in parallel
+    const [games]=await Promise.all([fetchAllScores(),fetchOddsAPI()]);
     if(!games.length){fetchError="No games found in the next 24 hours. Check back soon!";state=[]}
-    else{fetchError=null;state=games.map(g=>({...g,hRate:0,aRate:0,hAccel:0,spreadRate:0,hVol:45+Math.random()*20,aVol:45+Math.random()*20,signal:"HOLD",signalSide:"home",edge:0,hHist:[g.hImpl],aHist:[g.aImpl],sHist:[g.hSpread],baseHImpl:g.hImpl,baseAImpl:g.aImpl}))}
+    else{
+      fetchError=null;
+      state=games.map(g=>{
+        // Merge real odds from The Odds API
+        const odds=matchOdds(g.home,g.away);
+        if(odds){
+          if(odds.dkHomeML){g.hOdds=odds.dkHomeML;g.aOdds=odds.dkAwayML;
+            const hI=g.hOdds<0?(-g.hOdds)/(-g.hOdds+100)*100:100/(g.hOdds+100)*100;
+            g.hImpl=hI;g.aImpl=100-hI;
+            g.openHOdds=odds.dkHomeML;g.openAOdds=odds.dkAwayML;
+            g.openHImpl=hI;g.openAImpl=100-hI;
+          }
+          if(odds.dkHomeSpread!=null){g.hSpread=odds.dkHomeSpread;g.openHSpread=odds.dkHomeSpread;
+            g.dkHomeSpreadOdds=odds.dkHomeSpreadOdds;g.dkAwaySpreadOdds=odds.dkAwaySpreadOdds}
+          // FanDuel for comparison
+          if(odds.fdHomeML){g.fdHomeML=odds.fdHomeML;g.fdAwayML=odds.fdAwayML}
+          if(odds.fdHomeSpread!=null){g.fdHomeSpread=odds.fdHomeSpread}
+          g.hasRealOdds=true;
+          g.oddsSource='DraftKings';
+        }
+        return{...g,hRate:0,aRate:0,hAccel:0,spreadRate:0,hVol:45+Math.random()*20,aVol:45+Math.random()*20,signal:"HOLD",signalSide:"home",edge:0,hHist:[g.hImpl],aHist:[g.aImpl],sHist:[g.hSpread],baseHImpl:g.hImpl,baseAImpl:g.aImpl};
+      });
+    }
     lastFetch=new Date();
   }catch(e){fetchError="Couldn't reach ESPN. Check connection.";console.error(e)}
   isLoading=false;render();
@@ -644,19 +778,50 @@ function render(){
     if(!g.isLive&&!g.isFinal)html+=`<div class="card-sched-score">${g.clock||g.period}</div>`;
     html+=`</div>`;
 
+    // ═══ BET ACTION BOX — clear recommendation ═══
+    if(g.isLive&&g.signal!=="HOLD"){
+      // Active signal — strong recommendation
+      const betTeam=g.signalSide==="home"?g.home:g.away;
+      const betOdds=g.signalSide==="home"?g.hOdds:g.aOdds;
+      const isBuy=g.signal.includes("BUY");
+      const betSpread=g.signalSide==="home"?g.hSpread:(-g.hSpread);
+      if(isBuy){
+        html+=`<div class="bet-action buy"><div class="bet-action-icon">🦖</div><div class="bet-action-text"><div class="bet-action-label" style="color:var(--green)">${g.signal} — PLACE THIS BET</div><div class="bet-action-pick" style="color:var(--green)">${betTeam} ML</div></div><div class="bet-action-odds" style="color:var(--green)">${fO(betOdds)}</div></div>`;
+      }else{
+        const fadeTeam=g.signalSide==="home"?g.away:g.home;
+        const fadeOdds=g.signalSide==="home"?g.aOdds:g.hOdds;
+        html+=`<div class="bet-action fade"><div class="bet-action-icon">⚠️</div><div class="bet-action-text"><div class="bet-action-label" style="color:var(--red)">FADE — BET THE OTHER SIDE</div><div class="bet-action-pick" style="color:var(--red)">Take ${fadeTeam} ML</div></div><div class="bet-action-odds" style="color:var(--red)">${fO(fadeOdds)}</div></div>`;
+      }
+    }else if(!g.isFinal){
+      // No signal yet — show the lean
+      const favHome=g.hImpl>g.aImpl;
+      const favTeam=favHome?g.home:g.away;
+      const favOdds=favHome?g.hOdds:g.aOdds;
+      const favImpl=favHome?g.hImpl:g.aImpl;
+      if(Math.abs(g.hImpl-50)>5){
+        html+=`<div class="bet-action lean"><div class="bet-action-icon">📊</div><div class="bet-action-text"><div class="bet-action-label" style="color:var(--muted)">${g.isLive?"CURRENT FAVORITE":"PRE-GAME FAVORITE"}</div><div class="bet-action-pick" style="color:var(--text)">${favTeam} · ${favImpl.toFixed(0)}% win prob</div></div><div class="bet-action-odds" style="color:var(--muted)">${fO(favOdds)}</div></div>`;
+      }
+    }
+
     // Odds grid
     html+=`<div class="odds-grid">`;
-    [{label:g.away,odds:g.aOdds,rate:g.aRate,impl:g.aImpl,data:g.aHist,side:"away",openOdds:g.openAOdds},
-     {label:g.home,odds:g.hOdds,rate:g.hRate,impl:g.hImpl,data:g.hHist,side:"home",openOdds:g.openHOdds}].forEach(s=>{
+    [{label:g.away,odds:g.aOdds,rate:g.aRate,impl:g.aImpl,data:g.aHist,side:"away",openOdds:g.openAOdds,fdOdds:g.fdAwayML},
+     {label:g.home,odds:g.hOdds,rate:g.hRate,impl:g.hImpl,data:g.hHist,side:"home",openOdds:g.openHOdds,fdOdds:g.fdHomeML}].forEach(s=>{
       const isSig=g.signalSide===s.side&&g.signal.includes("BUY");
       const oddsCol=s.rate>1?"var(--green)":s.rate<-1?"var(--red)":"inherit";
       const sparkCol=s.rate>0?"#4ade80":"#f87171";
-      html+=`<div class="odds-box${isSig?" signal":""}"><div class="odds-team">${s.label}</div><div class="odds-num" style="color:${oddsCol}">${fO(s.odds)}</div>${spark(s.data,sparkCol)}${velBar(s.rate)}<div class="odds-impl">${s.impl.toFixed(1)}% implied${g.isLive&&s.openOdds?` · Open ${fO(s.openOdds)}`:""}</div></div>`;
+      const srcTag=g.hasRealOdds?'<span style="font-size:8px;color:var(--faint);margin-left:4px">DK</span>':'';
+      const fdLine=s.fdOdds?` · <span style="font-size:8px;color:var(--faint)">FD</span> ${fO(s.fdOdds)}`:'';
+      const openLine=g.isLive&&s.openOdds?` · Open ${fO(s.openOdds)}`:'';
+      html+=`<div class="odds-box${isSig?" signal":""}"><div class="odds-team">${s.label}${srcTag}</div><div class="odds-num" style="color:${oddsCol}">${fO(s.odds)}</div>${spark(s.data,sparkCol)}${velBar(s.rate)}<div class="odds-impl">${s.impl.toFixed(1)}%${openLine}${fdLine}</div></div>`;
     });
     html+=`</div>`;
 
-    // Spread
-    html+=`<div class="spread-box"><div><div class="spread-label">SPREAD${g.isLive&&g.openHSpread!==undefined?` <span style="color:var(--faint);font-weight:500;letter-spacing:0"> (Open ${fS(g.openHSpread)})</span>`:""}</div></div><div style="display:flex;align-items:baseline;gap:6px"><span class="spread-num" style="color:${g.hSpread<0?"var(--blue)":"var(--orange)"}">${fS(g.hSpread)}</span><span class="spread-vel" style="color:${sSCol}">${g.spreadRate>0?"▲":g.spreadRate<0?"▼":""}${Math.abs(g.spreadRate).toFixed(1)}</span></div></div>`;
+    // Spread — show DK spread odds if available
+    const spreadOdds=g.dkHomeSpreadOdds?` (${fO(g.dkHomeSpreadOdds)})`:'';
+    const fdSpread=g.fdHomeSpread!=null?` · <span style="font-size:8px;color:var(--faint)">FD</span> ${fS(g.fdHomeSpread)}`:'';
+    const openSpread=g.isLive&&g.openHSpread!==undefined?` <span style="color:var(--faint);font-weight:500;letter-spacing:0">(Open ${fS(g.openHSpread)})</span>`:'';
+    html+=`<div class="spread-box"><div><div class="spread-label">SPREAD${openSpread}</div></div><div style="display:flex;align-items:baseline;gap:6px"><span class="spread-num" style="color:${g.hSpread<0?"var(--blue)":"var(--orange)"}">${fS(g.hSpread)}${spreadOdds}</span><span class="spread-vel" style="color:${sSCol}">${g.spreadRate>0?"▲":g.spreadRate<0?"▼":""}${Math.abs(g.spreadRate).toFixed(1)}</span></div></div>`;
 
     // Volume
     html+=`<div><div class="vol-labels"><span>${g.away} ${aVolPct.toFixed(0)}%</span><span>${(100-aVolPct).toFixed(0)}% ${g.home}</span></div><div class="vol-track"><div class="vol-a" style="width:${aVolPct}%"></div><div class="vol-h"></div></div></div>`;
@@ -672,8 +837,12 @@ function render(){
       html+=`</div>`;
       if(g.signal!=="HOLD"){
         const st=g.signalSide==="home"?g.home:g.away;
+        const oppSt=g.signalSide==="home"?g.away:g.home;
         const sc=g.signal.includes("BUY")?"var(--green)":"var(--red)";
-        const txt=g.signal.includes("BUY")?`ML shifting ${Math.abs(g.hRate).toFixed(1)}% with ${g.hAccel>0?"increasing":"sustained"} acceleration. Spread ${Math.abs(g.spreadRate)>.2?"confirming":"lagging — value window"}. Volume ${((g.signalSide==="home"?g.hVol:g.aVol)/(g.hVol+g.aVol)*100).toFixed(0)}% this side.`:`Sharp move decelerating. Spread ${Math.abs(g.spreadRate)>.3?"also reversing":"hasn't followed"}. Consider the other side.`;
+        const betOdds=g.signalSide==="home"?g.hOdds:g.aOdds;
+        const txt=g.signal.includes("BUY")
+          ?`Bet ${st} ML at ${fO(betOdds)}. Line shifting ${Math.abs(g.hRate).toFixed(1)}% with ${g.hAccel>0?"increasing":"sustained"} acceleration. Spread ${Math.abs(g.spreadRate)>.2?"confirming":"lagging — value window"}. Volume ${((g.signalSide==="home"?g.hVol:g.aVol)/(g.hVol+g.aVol)*100).toFixed(0)}% on this side. Get in before the line moves further.`
+          :`${st} line is overreacting. Take ${oppSt} ML instead. Sharp move decelerating — spread ${Math.abs(g.spreadRate)>.3?"also reversing":"hasn't followed"}. The market will correct.`;
         html+=`<div class="detail-text"><span class="detail-strong" style="color:${sc}">${g.signal} ${st}:</span> ${txt}</div>`;
       }
       // Opening line for live games
@@ -845,7 +1014,7 @@ function renderPicks(){
   const soccerg=upcoming.filter(g=>SOCCER_LEAGUES.includes(g.sport)&&scorePick(g)>0).sort((a,b)=>scorePick(b)-scorePick(a));
   const tennisg=upcoming.filter(g=>TENNIS_LEAGUES.includes(g.sport)&&scorePick(g)>0).sort((a,b)=>scorePick(b)-scorePick(a));
 
-  let html=`<div style="padding:8px 0 4px"><div style="font-size:16px;font-weight:700;margin-bottom:2px">🧠 Today's Picks</div><div style="font-size:11px;color:var(--dim);margin-bottom:4px">${dateStr}</div><div style="font-size:10px;color:var(--faint);margin-bottom:14px">Auto-generated from live ESPN data. ML & spread picks ranked by implied edge.</div></div>`;
+  let html=`<div style="padding:8px 0 4px"><div style="font-size:16px;font-weight:700;margin-bottom:2px">🧠 Today's Picks</div><div style="font-size:11px;color:var(--dim);margin-bottom:4px">${dateStr}</div><div style="font-size:10px;color:var(--faint);margin-bottom:14px">Odds from DraftKings via The Odds API. ML & spread picks ranked by implied edge.</div></div>`;
 
   let hasPicks=false;
 
